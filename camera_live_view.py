@@ -60,6 +60,9 @@ class App(QtGui.QMainWindow):
         self.connection = rpyc.connect('gain.physik.hu-berlin.de', 8000)
         self.cams = self.connection.root.cams
 
+        for cam in self.cams:
+            cam.set_exposure(-3)
+
         self.image_data = [np.array([[1,2], [3,4]])] * 3
 
         self.thread = Thread(target = self.retrieve_data, args = tuple())
@@ -78,7 +81,7 @@ class App(QtGui.QMainWindow):
     def _update(self):
         for idx in range(3):
             data = self.image_data[idx]
-            self.imgs[idx].setImage(data)
+            self.imgs[idx].setImage(data, levels=(0, 255))
 
         now = time.time()
         dt = (now-self.lastupdate)
