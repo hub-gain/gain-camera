@@ -50,16 +50,6 @@ class Camera:
     def save_image(self, filename):
         self.cam.save_image(filename, 0)
 
-    def enable_trigger(self, enable):
-        if enable:
-            #self.cam.enable_continuous_mode(True)
-            self.cam.start_live()
-            if not self.cam.callback_registered:
-                self.cam.register_frame_ready_callback()
-            self.cam.enable_trigger(True)
-        else:
-            self.cam.enable_trigger(False)
-
     def set_exposure(self, value):
         self.cam.exposure.value = value
 
@@ -200,6 +190,26 @@ class CameraService(rpyc.Service):
         #plt.grid()
         #plt.show()
         return d
+
+    def enable_trigger(self, enable):
+        if enable:
+            for cam in self.cams:
+                try:
+                    cam.cam.suspend_live()
+                except:
+                    pass
+
+            for cam in self.cams:
+                cam.cam.enable_continuous_mode(True)
+
+            for cam in self.cams:
+                cam.cam.start_live()
+                if not cam.cam.callback_registered:
+                    cam.cam.register_frame_ready_callback()
+                cam.cam.enable_trigger(True)
+        else:
+            for cam in self.cams:
+                cam.cam.enable_trigger(False)
 
 
 if __name__ == '__main__':

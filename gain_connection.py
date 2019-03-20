@@ -38,11 +38,16 @@ class Connection:
             cam.set_exposure(exposure)
 
     def enable_trigger(self, enable):
-        for cam in self.connection.root.cams:
-            cam.enable_trigger(enable)
+        self.connection.root.enable_trigger(enable)
 
     def snap_image(self, cam_idx):
         return np.array(self.connection.root.cams[cam_idx].snap_image())
 
+    def retrieve_image(self, cam_idx):
+        return np.array(self.connection.root.cams[cam_idx].retrieve_image())
+
     def reset_frame_ready(self, cam_idx):
         self.connection.root.cams[cam_idx].cam.reset_frame_ready()
+
+    def wait_till_frame_ready(self, cam_idx):
+        self.connection.root.cams[cam_idx].cam.wait_til_frame_ready()
