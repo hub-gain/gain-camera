@@ -2,7 +2,8 @@ import os
 import dill
 import rpyc
 import numpy as np
-from threading import Thread, Pipe
+from multiprocessing import Pipe
+from threading import Thread
 
 os.chdir('C:\\Users\\gain\\Documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32')
 import icpy3
@@ -11,7 +12,7 @@ from time import time
 from matplotlib import pyplot as plt
 from rpyc.utils.server import ThreadedServer
 
-from utils import img2count, crop_imgs
+from gain_camera.utils import img2count, crop_imgs
 
 
 class Camera:
@@ -52,7 +53,7 @@ class Camera:
 
     def enable_trigger(self, enable):
         if enable:
-            #self.cam.enable_continuous_mode(True)
+            self.cam.enable_continuous_mode(True)
             self.cam.start_live()
             if not self.cam.callback_registered:
                 self.cam.register_frame_ready_callback()
@@ -68,7 +69,7 @@ class CameraService(rpyc.Service):
     def __init__(self):
         self.ic = icpy3.IC_ImagingControl()
         self.ic.init_library()
-
+        print('INT!')
         self.cams = [Camera(self.ic, idx) for idx in range(3)]
         cams = self.cams
 
@@ -106,7 +107,7 @@ class CameraService(rpyc.Service):
 
         def do(child_pipe):
             while not child_pipe.poll():
-                for idx, cam in self.cams:
+                for idx, cam in enumerate(self.cams):
                     self.continuous_camera_images[idx] = np.array(cam.snap_image())
 
         pipe, child_pipe = Pipe()
@@ -203,7 +204,7 @@ class CameraService(rpyc.Service):
 
 
 if __name__ == '__main__':
-    server = ThreadedServer(CameraService, port=8000, protocol_config={
+    server = ThreadedServer(CameraService(), port=8000, protocol_config={
         'allow_public_attrs': True,
         'allow_pickle': True
     })
