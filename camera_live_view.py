@@ -68,7 +68,7 @@ class App(QtGui.QMainWindow):
     def draw_images(self):
         for idx in range(3):
             data = self.connection.image_data[idx]
-            self.imgs[idx].setImage(data)
+            self.imgs[idx].setImage(data, levels=(0, 255))
 
         QtCore.QTimer.singleShot(1, self.draw_images)
 
