@@ -2,7 +2,7 @@ import os
 import dill
 import rpyc
 import numpy as np
-
+from threading import Thread, Pipe
 
 os.chdir('C:\\Users\\gain\\Documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32')
 import icpy3
@@ -10,6 +10,8 @@ import icpy3
 from time import time
 from matplotlib import pyplot as plt
 from rpyc.utils.server import ThreadedServer
+
+from utils import img2count, crop_imgs
 
 
 class Camera:
@@ -52,46 +54,14 @@ class Camera:
         if enable:
             #self.cam.enable_continuous_mode(True)
             self.cam.start_live()
-            self.cam.register_frame_ready_callback()
-            self.enable_trigger(True)
+            if not self.cam.callback_registered:
+                self.cam.register_frame_ready_callback()
+            self.cam.enable_trigger(True)
         else:
             self.cam.enable_trigger(False)
 
-    def calibrate(self):
-        for i in range(10):
-            self.snap_image()
-
-        self.background = img2count(self.snap_image(), self, subtract_background=False)
-    
     def set_exposure(self, value):
         self.cam.exposure.value = value
-
-
-def img2count(img, cam, subtract_background=True):
-    count = np.sum(
-        np.sum(img)) / 1e9 / (10 * (2 ** (cam.cam.exposure.value))
-    )
-
-    if subtract_background:
-        assert cam.background is not None, 'camera not calibrated'
-        count -= cam.background
-
-    return count
-
-
-def crop_imgs(imgs):
-    bounds = (
-        ((0, 350), (175, 525)),
-        ((55, 405), (200, 550)),
-        ((0, 350), (140, 490))
-    )
-    new_imgs = []
-
-    for i, img in enumerate(imgs):
-        b = bounds[i]
-        new_imgs.append(img[b[0][0]:b[0][1],b[1][0]:b[1][1]])
-
-    return new_imgs
 
 
 class CameraService(rpyc.Service):
@@ -108,13 +78,16 @@ class CameraService(rpyc.Service):
             except:
                 pass
 
+        self.acquisition_thread = None
+        self.continuous_camera_images = [[], [], []]
+
         #cam.set_format(0)
         #cam.snap_image()
 
         """input('ready for calibration?')"""
         """for cam in cams:
             cam.calibrate()"""
-        
+
 
         """for cam in cams:
             cam.cam.enable_continuous_mode(True)
@@ -124,8 +97,28 @@ class CameraService(rpyc.Service):
             cams[i].cam.start_live()
             if not cams[i].cam.callback_registered:
                 cams[i].cam.register_frame_ready_callback()
-            
+
             cams[i].cam.enable_trigger(True)"""
+
+    def start_continuous_mode(self):
+        if self.acquisition_thread is not None:
+            return
+
+        def do(child_pipe):
+            while not child_pipe.poll():
+                for idx, cam in self.cams:
+                    self.continuous_camera_images[idx] = np.array(cam.snap_image())
+
+        pipe, child_pipe = Pipe()
+
+        self.acquisition_thread = Thread(target = do, args = (child_pipe,))
+        self.acquisition_thread.start()
+        self.acquisition_thread_pipe = pipe
+
+    def stop_continuous_mode(self):
+        self.acquisition_thread = None
+        self.acquisition_thread_pipe.send(True)
+        self.acquisition_thread_pipe = None
 
     def record_series(self):
         cams = self.cams
@@ -137,7 +130,7 @@ class CameraService(rpyc.Service):
             cams[i].cam.start_live()
             if not cams[i].cam.callback_registered:
                 cams[i].cam.register_frame_ready_callback()
-            
+
             cams[i].cam.enable_trigger(True)
 
         SMOT = 0
@@ -170,7 +163,7 @@ class CameraService(rpyc.Service):
                     # this is necessary for all cams in order to flush img cache
                     cam.cam.reset_frame_ready()
 
-                atom_number = np.mean([img2count(img, cam) for img, cam in zip(imgs, cams)])
+                atom_number = np.mean([img2count(img, cam.cam.exposure.value) for img, cam in zip(imgs, cams)])
                 atom_numbers.append(atom_number)
 
                 if new_time - last_time > 1 and img_number > 0:

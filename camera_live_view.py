@@ -1,18 +1,34 @@
-import rpyc
-from matplotlib import pyplot as plt
 import sys
-import time
-from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
 import pyqtgraph as pg
 
-from threading import Thread
-from time import sleep
+from matplotlib import pyplot as plt
+from pyqtgraph.Qt import QtCore, QtGui
+
+from gain_connection import Connection
+
+
+class ExposureTimeComboBox(QtGui.QComboBox):
+    values = np.arange(-2, -13.1, -1)
+    value_names = [str(v) for v in values]
+
+    def __init__(self, connection, *args, **kwargs):
+        QtGui.QComboBox.__init__(self, *args, **kwargs)
+
+        self.connection = connection
+        self.addItems(self.value_names)
+        self.currentIndexChanged.connect(self.selected_exposure)
+
+    def selected_exposure(self, idx):
+        value = self.values[idx]
+        self.connection.set_exposure_time(value)
 
 
 class App(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(App, self).__init__(parent)
+
+        self.connection = Connection()
 
         #### Create Gui Elements ###########
         self.mainbox = QtGui.QWidget()
@@ -22,8 +38,8 @@ class App(QtGui.QMainWindow):
         self.canvas = pg.GraphicsLayoutWidget()
         self.mainbox.layout().addWidget(self.canvas)
 
-        self.label = QtGui.QLabel()
-        self.mainbox.layout().addWidget(self.label)
+        self.exposure_time = ExposureTimeComboBox(self.connection)
+        self.mainbox.layout().addWidget(self.exposure_time)
 
         self.views = []
         self.imgs = []
@@ -44,53 +60,17 @@ class App(QtGui.QMainWindow):
                 self.canvas.nextColumn()
 
 
-
-        #### Set Data  #####################
-
-        self.counter = 0
-        self.fps = 0.
-        self.lastupdate = time.time()
-
-        self.connect_cameras()
-
         #### Start  #####################
-        self._update()
+        self.connection.connect()
+        self.connection.run_acquisition_thread()
+        self.draw_images()
 
-    def connect_cameras(self):
-        self.connection = rpyc.connect('gain.physik.hu-berlin.de', 8000)
-        self.cams = self.connection.root.cams
-
-        self.image_data = [np.array([[1,2], [3,4]])] * 3
-
-        self.thread = Thread(target = self.retrieve_data, args = tuple())
-        self.thread.start()
-        #thread.join()
-
-    def retrieve_data(self):
-        while True:
-            for idx, cam in enumerate(self.cams):
-                self.image_data[idx] = np.array(cam.snap_image())
-                """print('MAX', np.max(np.max(self.image_data[idx])))
-                plt.pcolormesh(self.image_data[idx])
-                plt.colorbar()
-                plt.show()"""
-
-    def _update(self):
+    def draw_images(self):
         for idx in range(3):
-            data = self.image_data[idx]
+            data = self.connection.image_data[idx]
             self.imgs[idx].setImage(data)
 
-        now = time.time()
-        dt = (now-self.lastupdate)
-        if dt <= 0:
-            dt = 0.000000000001
-        fps2 = 1.0 / dt
-        self.lastupdate = now
-        self.fps = self.fps * 0.9 + fps2 * 0.1
-        tx = 'Mean Frame Rate:  {fps:.3f} FPS'.format(fps=self.fps )
-        self.label.setText(tx)
-        QtCore.QTimer.singleShot(1, self._update)
-        self.counter += 1
+        QtCore.QTimer.singleShot(1, self.draw_images)
 
 
 if __name__ == '__main__':
