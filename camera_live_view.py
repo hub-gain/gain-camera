@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from pyqtgraph.Qt import QtCore, QtGui
 
 from gain_connection import Connection
+from utils import img2count
 
 
 class ExposureTimeComboBox(QtGui.QComboBox):
@@ -38,6 +39,12 @@ class App(QtGui.QMainWindow):
         self.canvas = pg.GraphicsLayoutWidget()
         self.mainbox.layout().addWidget(self.canvas)
 
+        self.atom_numbers = []
+        self.plotwidget = pg.PlotWidget()
+        self.plotcurve = pg.PlotCurveItem()
+        self.plotwidget.addItem(self.plotcurve)
+        self.mainbox.layout().addWidget(self.plotwidget)
+
         self.exposure_time = ExposureTimeComboBox(self.connection)
         self.mainbox.layout().addWidget(self.exposure_time)
 
@@ -66,9 +73,26 @@ class App(QtGui.QMainWindow):
         self.draw_images()
 
     def draw_images(self):
+        atoms = []
         for idx in range(3):
             data = self.connection.image_data[idx]
             self.imgs[idx].setImage(data, levels=(0, 255))
+            # FIXME: query real exposure from server!
+            exposure = self.exposure_time.values[self.exposure_time.currentIndex() or 0]
+            atoms.append(
+                img2count(data, exposure)
+            )
+        atoms = np.sum(atoms)
+        last = 0
+        if len(self.atom_numbers) > 0:
+            last = self.atom_numbers[-1]
+        if atoms != last:
+            # FIXME: Better!
+            self.atom_numbers.append(atoms)
+
+        self.atom_numbers = self.atom_numbers[-200:]
+
+        self.plotcurve.setData(self.atom_numbers)
 
         QtCore.QTimer.singleShot(1, self.draw_images)
 
