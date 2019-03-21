@@ -90,7 +90,7 @@ class App(QtGui.QMainWindow):
             # FIXME: Better!
             self.atom_numbers.append(atoms)
 
-        self.atom_numbers = self.atom_numbers[-200:]
+        self.atom_numbers = self.atom_numbers[-400:]
 
         self.plotcurve.setData(self.atom_numbers)
 

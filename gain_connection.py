@@ -37,8 +37,8 @@ class Connection:
         for cam in self.connection.root.cams:
             cam.set_exposure(exposure)
 
-    def enable_trigger(self, enable):
-        self.connection.root.enable_trigger(enable)
+    def enable_trigger(self, enable, cam_idxs):
+        self.connection.root.enable_trigger(enable, cam_idxs=cam_idxs)
 
     def snap_image(self, cam_idx):
         return np.array(self.connection.root.cams[cam_idx].snap_image())
