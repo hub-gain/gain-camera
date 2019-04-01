@@ -48,6 +48,9 @@ class Parameters:
         self.background = Parameter()
         self.crop_enabled = Parameter(start=True)
         self.crop = Parameter(start=(0, 744, 0, 480))
+        self.live_imgs = Parameter()
+        self.trigger = Parameter(start=False)
+        self.continuous_acquisition = Parameter(start=False)
 
         self._remote_listener_queue = {}
 
