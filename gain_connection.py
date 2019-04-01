@@ -30,7 +30,8 @@ class FakeConnection:
 class Connection:
     def connect(self):
         #print('not connecting')
-        self.image_data = [np.array([[1,2], [3,4]])] * 3
+        #self.image_data = [np.array([[1,2], [3,4]])] * 3
+        self.image_data = [None] * 3
         #return
         self.connection = rpyc.connect('gain.physik.hu-berlin.de', 8000)
         # FIXME: not using continuous mode
@@ -53,11 +54,13 @@ class Connection:
 
                 if is_good_data:
                     self.image_data = list(self.connection.root.continuous_camera_images)"""
+                image_data = []
                 for idx in range(3):
-                    self.image_data[idx] = np.array(self.connection.root.cams[idx].snap_image())
+                    image_data.append(np.array(self.connection.root.snap_image(idx)))
+                self.image_data = image_data
                 sleep(.05)
 
-        self.thread = Thread(target = retrieve_data, args = tuple())
+        self.thread = Thread(target = retrieve_data, args = tuple(), daemon=True)
         self.thread.start()
         #thread.join()
 

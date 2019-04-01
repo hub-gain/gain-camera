@@ -46,6 +46,8 @@ class Parameters:
     def __init__(self):
         self.exposure = Parameter(min_=-13, max_=-2, start=-2)
         self.background = Parameter()
+        self.crop_enabled = Parameter(start=True)
+        self.crop = Parameter(start=(0, 744, 0, 480))
 
         self._remote_listener_queue = {}
 

@@ -3,7 +3,7 @@ import sys
 # add ui folder to path
 sys.path += [
     os.path.join(*list(
-        os.path.split(os.path.abspath(__file__))[:-1]) + ['ui']#
+        os.path.split(os.path.abspath(__file__))[:-1]) + ['ui']
     )
 ]
 import numpy as np
@@ -19,17 +19,15 @@ from widgets import CustomWidget
 
 
 class CameraApplication:
-    def __init__(self, app):
+    def __init__(self, app, window):
         self.app = app
+        self.window = window
         self.init()
 
-    def init(self):
-        if not self.application_is_ready():
-            print('app not yet ready')
-            QtCore.QTimer.singleShot(100, self.init)
-            return
+        app.aboutToQuit.connect(self.shutdown)
 
-        self.connection = FakeConnection()
+    def init(self):
+        self.connection = Connection()
 
         #### Create Gui Elements ###########
 
@@ -45,36 +43,42 @@ class CameraApplication:
 
     def get_widget(self, name):
         """Queries a widget by name."""
-        return self.app.activeWindow().findChild(QtCore.QObject, name)
-
-    def application_is_ready(self):
-        return self.app.activeWindow() is not None
+        return self.window.findChild(QtCore.QObject, name)
 
     def draw_images(self):
         image_data = list(self.connection.image_data)
 
-        camera_widget = self.get_widget('cameras')
-        camera_widget.draw_images(image_data)
+        data_not_good = False
+        for d in image_data:
+            if d is None:
+                data_not_good = True
 
-        atom_number_widget = self.get_widget('atom_numbers')
-        exposure = self.connection.parameters.exposure.value
-        atoms = [
-            img2count(data, exposure) for data in image_data
-        ]
-        atoms = np.sum(atoms)
+        if not data_not_good:
+            camera_widget = self.get_widget('cameras')
+            camera_widget.draw_images(image_data)
 
-        last = 0
-        if len(self.atom_numbers) > 0:
-            last = self.atom_numbers[-1]
-        if atoms != last:
-            # FIXME: Better!
-            self.atom_numbers.append(atoms)
+            atom_number_widget = self.get_widget('atom_numbers')
+            exposure = self.connection.parameters.exposure.value
+            atoms = [
+                img2count(data, exposure) for data in image_data
+            ]
+            atoms = np.sum(atoms)
 
-        self.atom_numbers = self.atom_numbers[-400:]
-        atom_number_widget.draw(self.atom_numbers)
+            last = 0
+            if len(self.atom_numbers) > 0:
+                last = self.atom_numbers[-1]
+            if atoms != last:
+                # FIXME: Better!
+                self.atom_numbers.append(atoms)
+
+            self.atom_numbers = self.atom_numbers[-400:]
+            atom_number_widget.draw(self.atom_numbers)
 
         # FIXME: this is not very resource friendly!
-        QtCore.QTimer.singleShot(1, self.draw_images)
+        QtCore.QTimer.singleShot(50, self.draw_images)
+
+    def shutdown(self):
+        self.app.quit()
 
 
 if __name__ == '__main__':
@@ -87,7 +91,7 @@ if __name__ == '__main__':
 
     persistent = {}
     def _run():
-        persistent['application'] = CameraApplication(app)
+        persistent['application'] = CameraApplication(app, MainWindow)
 
     QtCore.QTimer.singleShot(1, _run)
 

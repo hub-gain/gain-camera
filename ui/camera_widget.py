@@ -16,7 +16,7 @@ class CameraWidget(GraphicsLayoutWidget, CustomWidget):
         for idx in range(3):
             view = self.addViewBox()
             view.setAspectLocked(True)
-            view.setRange(QtCore.QRectF(0,0, 480, 744))
+            view.setRange(QtCore.QRectF(0, 0, 480, 744))
 
             #  image plot
             img = pg.ImageItem(border='w')

@@ -487,13 +487,13 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox_2">
+       <widget class="CropBoxWidget" name="groupBox_2">
         <property name="title">
          <string>Crop</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_5">
          <item>
-          <widget class="QCheckBox" name="checkBox">
+          <widget class="QCheckBox" name="enableCrop">
            <property name="text">
             <string>enable</string>
            </property>
@@ -502,7 +502,11 @@
          <item>
           <layout class="QGridLayout" name="gridLayout">
            <item row="1" column="1">
-            <widget class="QSpinBox" name="spinBox"/>
+            <widget class="QSpinBox" name="cropY0">
+             <property name="maximum">
+              <number>470</number>
+             </property>
+            </widget>
            </item>
            <item row="0" column="0">
             <widget class="QLabel" name="label_2">
@@ -519,13 +523,34 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QSpinBox" name="spinBox_2"/>
+            <widget class="QSpinBox" name="cropX0">
+             <property name="buttonSymbols">
+              <enum>QAbstractSpinBox::UpDownArrows</enum>
+             </property>
+             <property name="maximum">
+              <number>734</number>
+             </property>
+            </widget>
            </item>
            <item row="0" column="2">
-            <widget class="QSpinBox" name="spinBox_3"/>
+            <widget class="QSpinBox" name="cropX1">
+             <property name="maximum">
+              <number>744</number>
+             </property>
+             <property name="value">
+              <number>744</number>
+             </property>
+            </widget>
            </item>
            <item row="1" column="2">
-            <widget class="QSpinBox" name="spinBox_4"/>
+            <widget class="QSpinBox" name="cropY1">
+             <property name="maximum">
+              <number>480</number>
+             </property>
+             <property name="value">
+              <number>480</number>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -551,6 +576,27 @@
             <string>wait for trigger</string>
            </property>
           </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="text">
+            <string>Clear</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QSpinBox" name="spinBox_5"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>data points</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
@@ -593,6 +639,12 @@
    <class>RecordBackgroundBox</class>
    <extends>QGroupBox</extends>
    <header location="global">record_background_box.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CropBoxWidget</class>
+   <extends>QGroupBox</extends>
+   <header location="global">crop_box_widget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
