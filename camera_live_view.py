@@ -1,88 +1,68 @@
+import os
 import sys
+# add ui folder to path
+sys.path += [
+    os.path.join(*list(
+        os.path.split(os.path.abspath(__file__))[:-1]) + ['ui']#
+    )
+]
 import numpy as np
 import pyqtgraph as pg
 
 from matplotlib import pyplot as plt
 from pyqtgraph.Qt import QtCore, QtGui
+from PyQt5 import QtWidgets
 
-from gain_connection import Connection
+from gain_connection import Connection, FakeConnection
 from utils import img2count
+from widgets import CustomWidget
 
 
-class ExposureTimeComboBox(QtGui.QComboBox):
-    values = np.arange(-2, -13.1, -1)
-    value_names = [str(v) for v in values]
+class CameraApplication:
+    def __init__(self, app):
+        self.app = app
+        self.init()
 
-    def __init__(self, connection, *args, **kwargs):
-        QtGui.QComboBox.__init__(self, *args, **kwargs)
+    def init(self):
+        if not self.application_is_ready():
+            print('app not yet ready')
+            QtCore.QTimer.singleShot(100, self.init)
+            return
 
-        self.connection = connection
-        self.addItems(self.value_names)
-        self.currentIndexChanged.connect(self.selected_exposure)
-
-    def selected_exposure(self, idx):
-        value = self.values[idx]
-        self.connection.set_exposure_time(value)
-
-
-class App(QtGui.QMainWindow):
-    def __init__(self, parent=None):
-        super(App, self).__init__(parent)
-
-        self.connection = Connection()
+        self.connection = FakeConnection()
 
         #### Create Gui Elements ###########
-        self.mainbox = QtGui.QWidget()
-        self.setCentralWidget(self.mainbox)
-        self.mainbox.setLayout(QtGui.QVBoxLayout())
-
-        self.canvas = pg.GraphicsLayoutWidget()
-        self.mainbox.layout().addWidget(self.canvas)
 
         self.atom_numbers = []
-        self.plotwidget = pg.PlotWidget()
-        self.plotcurve = pg.PlotCurveItem()
-        self.plotwidget.addItem(self.plotcurve)
-        self.mainbox.layout().addWidget(self.plotwidget)
-
-        self.exposure_time = ExposureTimeComboBox(self.connection)
-        self.mainbox.layout().addWidget(self.exposure_time)
-
-        self.views = []
-        self.imgs = []
-
-        for idx in range(3):
-            view = self.canvas.addViewBox()
-            view.setAspectLocked(True)
-            view.setRange(QtCore.QRectF(0,0, 480, 744))
-
-            #  image plot
-            img = pg.ImageItem(border='w')
-            view.addItem(img)
-
-            self.views.append(view)
-            self.imgs.append(img)
-
-            if idx < 2:
-                self.canvas.nextColumn()
-
 
         #### Start  #####################
         self.connection.connect()
         self.connection.run_acquisition_thread()
         self.draw_images()
 
+        for instance in CustomWidget.instances:
+            instance.connection_established(self.connection)
+
+    def get_widget(self, name):
+        """Queries a widget by name."""
+        return self.app.activeWindow().findChild(QtCore.QObject, name)
+
+    def application_is_ready(self):
+        return self.app.activeWindow() is not None
+
     def draw_images(self):
-        atoms = []
-        for idx in range(3):
-            data = self.connection.image_data[idx]
-            self.imgs[idx].setImage(data, levels=(0, 255))
-            # FIXME: query real exposure from server!
-            exposure = self.exposure_time.values[self.exposure_time.currentIndex() or 0]
-            atoms.append(
-                img2count(data, exposure)
-            )
+        image_data = list(self.connection.image_data)
+
+        camera_widget = self.get_widget('cameras')
+        camera_widget.draw_images(image_data)
+
+        atom_number_widget = self.get_widget('atom_numbers')
+        exposure = self.connection.parameters.exposure.value
+        atoms = [
+            img2count(data, exposure) for data in image_data
+        ]
         atoms = np.sum(atoms)
+
         last = 0
         if len(self.atom_numbers) > 0:
             last = self.atom_numbers[-1]
@@ -90,15 +70,25 @@ class App(QtGui.QMainWindow):
             # FIXME: Better!
             self.atom_numbers.append(atoms)
 
-        self.atom_numbers = self.atom_numbers[-200:]
+        self.atom_numbers = self.atom_numbers[-400:]
+        atom_number_widget.draw(self.atom_numbers)
 
-        self.plotcurve.setData(self.atom_numbers)
-
+        # FIXME: this is not very resource friendly!
         QtCore.QTimer.singleShot(1, self.draw_images)
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
-    thisapp = App()
-    thisapp.show()
+    from ui.main_window import Ui_MainWindow
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+
+    persistent = {}
+    def _run():
+        persistent['application'] = CameraApplication(app)
+
+    QtCore.QTimer.singleShot(1, _run)
+
     sys.exit(app.exec_())

@@ -41,12 +41,13 @@ input('ready?')
 
 from time import sleep
 sleep(1)"""
+
+cam_idx = 1
+
 try:
-    c.enable_trigger(True)
+    c.enable_trigger(True, [cam_idx])
 except:
     print('enabling failed!')
-
-cam_idx = 0
 
 for i in range(2):
     c.reset_frame_ready(cam_idx)
