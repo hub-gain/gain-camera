@@ -8,7 +8,7 @@ from threading import Thread
 os.chdir('C:\\Users\\gain\\Documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32')
 import icpy3
 
-from time import time
+from time import time, sleep
 from matplotlib import pyplot as plt
 from rpyc.utils.server import ThreadedServer
 
@@ -50,16 +50,6 @@ class Camera:
 
     def save_image(self, filename):
         self.cam.save_image(filename, 0)
-
-    def enable_trigger(self, enable):
-        if enable:
-            self.cam.enable_continuous_mode(True)
-            self.cam.start_live()
-            if not self.cam.callback_registered:
-                self.cam.register_frame_ready_callback()
-            self.cam.enable_trigger(True)
-        else:
-            self.cam.enable_trigger(False)
 
     def set_exposure(self, value):
         self.cam.exposure.value = value
@@ -123,16 +113,8 @@ class CameraService(rpyc.Service):
 
     def record_series(self):
         cams = self.cams
-        for cam in cams:
-            cam.cam.enable_continuous_mode(True)
-
-        for i in range(3):
-            # for some strange reason this does not work when inside Camera class
-            cams[i].cam.start_live()
-            if not cams[i].cam.callback_registered:
-                cams[i].cam.register_frame_ready_callback()
-
-            cams[i].cam.enable_trigger(True)
+        
+        self.enable_trigger(True)
 
         SMOT = 0
         MOT = 1
@@ -201,6 +183,35 @@ class CameraService(rpyc.Service):
         #plt.grid()
         #plt.show()
         return d
+
+    def enable_trigger(self, enable, cam_idxs=None):
+        print('enable!', enable)
+        if cam_idxs is None:
+            cam_idxs = [0, 1, 2]
+        cams = [self.cams[idx] for idx in cam_idxs]
+        
+        if enable:
+            for cam in cams:
+                try:
+                    cam.cam.suspend_live()
+                except:
+                    print('suspend failed')
+                    pass
+
+            for cam in cams:
+                cam.cam.enable_continuous_mode(True)
+                sleep(.1)
+
+            for cam in cams:
+                cam.cam.start_live()
+                if not cam.cam.callback_registered:
+                    cam.cam.register_frame_ready_callback()
+                cam.cam.enable_trigger(True)
+                sleep(.1)
+        else:
+            for cam in cams:
+                cam.cam.enable_trigger(False)
+                sleep(.1)
 
 
 if __name__ == '__main__':
