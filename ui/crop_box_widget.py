@@ -1,6 +1,7 @@
 import numpy as np
 from PyQt5 import QtGui, QtWidgets
 from widgets import CustomWidget
+from pyqtgraph.Qt import QtCore
 
 
 INPUT_NAMES = ('cropX0', 'cropX1', 'cropY0', 'cropY1')
@@ -12,7 +13,8 @@ class CropBoxWidget(QtWidgets.QGroupBox, CustomWidget):
 
     def connection_established(self, connection):
         self.connection = connection
-        self.connection.parameters.background.change(self.react_to_change)
+        self.connection.parameters.crop.change(self.react_to_change)
+        self.connection.parameters.crop_enabled.change(self.react_to_change)
 
         self.checkbox_enable.stateChanged.connect(self.change_crop)
         for name in INPUT_NAMES:
@@ -34,12 +36,20 @@ class CropBoxWidget(QtWidgets.QGroupBox, CustomWidget):
         return values
 
     def react_to_change(self, *args):
-        self.checkbox_enable.setCheckState(self.connection.parameters.crop_enabled.value)
+        # IMPORTANT: both values have to be queried first, and set later.
+        # Otherwise there will be a problem with event handlers.
+        crop_enabled = self.connection.parameters.crop_enabled.value
+        crop = list(self.connection.parameters.crop.value)
 
-        crop = self.connection.parameters.crop.value
+        self.checkbox_enable.setCheckState(2 if crop_enabled else 0)
         for idx, name in enumerate(INPUT_NAMES):
             self.get_widget(name).setValue(crop[idx])
 
     def change_crop(self):
-        self.connection.parameters.crop_enabled = self.checkbox_enable.isChecked()
-        self.connection.parameters.crop = self.get_crop_bounds()
+        def delayed_change():
+            """Delayed change is required in order to be able to initially set
+            both `crop_enabled` and `crop` without firing a change in between."""
+            self.connection.parameters.crop_enabled.value = self.checkbox_enable.isChecked()
+            self.connection.parameters.crop.value = tuple(self.get_crop_bounds())
+
+        QtCore.QTimer.singleShot(100, delayed_change)

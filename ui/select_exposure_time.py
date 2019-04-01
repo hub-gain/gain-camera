@@ -2,10 +2,14 @@ import numpy as np
 from PyQt5 import QtGui, QtWidgets
 from widgets import CustomWidget
 
+MAX_TIME = 250 # in ms
 
 class SelectExposureTimeWidget(QtWidgets.QComboBox, CustomWidget):
     values = [int(v) for v in np.arange(-2, -13.1, -1)]
-    value_names = [str(v) for v in values]
+    value_names = [
+        '%d (%.2f ms)' % (v, MAX_TIME / (2**idx))
+        for idx, v in enumerate(values)
+    ]
 
     def __init__(self, *args, **kwargs):
         super(SelectExposureTimeWidget, self).__init__(*args, **kwargs)

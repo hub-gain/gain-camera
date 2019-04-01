@@ -16,7 +16,6 @@ class CameraWidget(GraphicsLayoutWidget, CustomWidget):
         for idx in range(3):
             view = self.addViewBox()
             view.setAspectLocked(True)
-            view.setRange(QtCore.QRectF(0, 0, 480, 744))
 
             #  image plot
             img = pg.ImageItem(border='w')
@@ -32,3 +31,21 @@ class CameraWidget(GraphicsLayoutWidget, CustomWidget):
         for idx in range(3):
             data = image_data[idx]
             self.imgs[idx].setImage(data, levels=(0, 255))
+
+    def connection_established(self, connection):
+        params = connection.parameters
+        crop_enabled = params.crop_enabled.value
+        crop = params.crop.value
+
+        if not crop_enabled:
+            x0 = 0
+            y0 = 0
+            width = 480
+            height = 744
+        else:
+            x0, x1, y0, y1 = crop
+            width = x1 - x0
+            height = y1 - y0
+
+        for view in self.views:
+            view.setRange(QtCore.QRectF(x0, y0, width, height))
