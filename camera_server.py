@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 from rpyc.utils.server import ThreadedServer
 
 from utils import img2count, crop_imgs
+from parameters import Parameters
 
 
 class Camera:
@@ -29,7 +30,6 @@ class Camera:
         cam.exposure.value = -3
         cam.prepare_live()
         self.cam = cam
-        self.background = None
 
     def snap_image(self):
         self.cam.start_live()
@@ -68,8 +68,12 @@ class CameraService(rpyc.Service):
             except:
                 pass
 
+        self.parameters = Parameters()
+
         self.acquisition_thread = None
         self.continuous_camera_images = [[], [], []]
+
+        self._register_listeners()
 
         #cam.set_format(0)
         #cam.snap_image()
@@ -90,6 +94,12 @@ class CameraService(rpyc.Service):
 
             cams[i].cam.enable_trigger(True)"""
 
+    def _register_listeners(self):
+        def change_exposure(exposure):
+            for cam in self.cams:
+                cam.set_exposure(exposure)
+        self.parameters.exposure.change(change_exposure)
+
     def start_continuous_mode(self):
         if self.acquisition_thread is not None:
             return
@@ -109,6 +119,21 @@ class CameraService(rpyc.Service):
         self.acquisition_thread = None
         self.acquisition_thread_pipe.send(True)
         self.acquisition_thread_pipe = None
+
+    def record_background(self):
+        exposures = np.arange(-2, -13.1, -1)
+        backgrounds = []
+
+        for idx, exposure in enumerate(exposures):
+            for cam in self.cams:
+                cam.set_exposure(exposure)
+                cam.snap_image()
+
+            backgrounds.append(
+                [cam.snap_image() for cam in self.cams]
+            )
+
+        self.parameters.background.value = backgrounds
 
     def record_series(self):
         cams = self.cams
