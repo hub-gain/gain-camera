@@ -29,11 +29,8 @@ class CameraApplication:
     def init(self):
         self.connection = Connection()
 
-        #### Create Gui Elements ###########
-
         self.atom_numbers = []
 
-        #### Start  #####################
         self.connection.connect()
         self.connection.run_acquisition_thread()
         self.draw_images()
@@ -46,35 +43,30 @@ class CameraApplication:
         return self.window.findChild(QtCore.QObject, name)
 
     def draw_images(self):
-        image_data = list(self.connection.image_data)
+        image_data = self.connection.image_data
+        if image_data is not None:
+            self.connection.image_data = None
 
-        data_not_good = False
-        for d in image_data:
-            if d is None:
-                data_not_good = True
+            data_not_good = False
+            for d in image_data:
+                if d is None:
+                    data_not_good = True
 
-        if not data_not_good:
-            camera_widget = self.get_widget('cameras')
-            camera_widget.draw_images(image_data)
+            if not data_not_good:
+                camera_widget = self.get_widget('cameras')
+                camera_widget.draw_images(image_data)
 
-            atom_number_widget = self.get_widget('atom_numbers')
-            exposure = self.connection.parameters.exposure.value
-            atoms = [
-                img2count(data, exposure) for data in image_data
-            ]
-            atoms = np.sum(atoms)
+                atom_number_widget = self.get_widget('atom_numbers')
+                exposure = self.connection.parameters.exposure.value
+                atoms = [
+                    img2count(data, exposure) for data in image_data
+                ]
+                atoms = np.sum(atoms)
 
-            last = 0
-            if len(self.atom_numbers) > 0:
-                last = self.atom_numbers[-1]
-            if atoms != last:
-                # FIXME: Better!
-                self.atom_numbers.append(atoms)
+                self.atom_numbers.append(float(atoms))
+                self.atom_numbers = self.atom_numbers[-400:]
+                atom_number_widget.draw(self.atom_numbers)
 
-            self.atom_numbers = self.atom_numbers[-400:]
-            atom_number_widget.draw(self.atom_numbers)
-
-        # FIXME: this is not very resource friendly!
         QtCore.QTimer.singleShot(50, self.draw_images)
 
     def shutdown(self):

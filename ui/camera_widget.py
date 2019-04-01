@@ -29,7 +29,7 @@ class CameraWidget(GraphicsLayoutWidget, CustomWidget):
 
     def draw_images(self, image_data):
         for idx in range(3):
-            data = image_data[idx]
+            data = np.array(image_data[idx])
             self.imgs[idx].setImage(data, levels=(0, 255))
 
     def connection_established(self, connection):

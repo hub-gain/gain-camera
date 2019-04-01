@@ -54,7 +54,8 @@
             <string>Record background</string>
            </property>
            <property name="icon">
-            <iconset theme="close"/>
+            <iconset theme="close">
+             <normaloff>.</normaloff>.</iconset>
            </property>
            <property name="checkable">
             <bool>false</bool>
@@ -558,7 +559,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox_4">
+       <widget class="ConfigureRecordingBox" name="groupBox_4">
         <property name="title">
          <string>Atom number</string>
         </property>
@@ -571,7 +572,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="checkBox_3">
+          <widget class="QCheckBox" name="enableTrigger">
            <property name="text">
             <string>wait for trigger</string>
            </property>
@@ -645,6 +646,12 @@
    <class>CropBoxWidget</class>
    <extends>QGroupBox</extends>
    <header location="global">crop_box_widget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ConfigureRecordingBox</class>
+   <extends>QGroupBox</extends>
+   <header location="global">configure_recording_box.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -1,11 +1,17 @@
 import rpyc
+import dill
+import pickle
 import uuid
 import numpy as np
 from time import sleep
 from threading import Thread
-from parameters import Parameters
+from gain_camera.parameters import Parameters
 
 from pyqtgraph.Qt import QtCore
+
+import msgpack
+import msgpack_numpy as m
+m.patch()
 
 
 class FakeConnection:
@@ -29,13 +35,8 @@ class FakeConnection:
 
 class Connection:
     def connect(self):
-        #print('not connecting')
-        #self.image_data = [np.array([[1,2], [3,4]])] * 3
         self.image_data = [None] * 3
-        #return
         self.connection = rpyc.connect('gain.physik.hu-berlin.de', 8000)
-        # FIXME: not using continuous mode
-        # self.connection.root.start_continuous_mode()
         self.uuid = uuid.uuid4().hex
         self.parameters = RemoteParameters(
             self.connection.root.parameters,
@@ -43,26 +44,15 @@ class Connection:
         )
 
     def run_acquisition_thread(self):
-        def retrieve_data():
-            while True:
-                # FIXME: not using continuous mode
-                """data = list(self.connection.root.continuous_camera_images)
-                is_good_data = True
-                for d in data:
-                    if not d:
-                        is_good_data = False
+        self.parameters.continuous_acquisition.value = True
 
-                if is_good_data:
-                    self.image_data = list(self.connection.root.continuous_camera_images)"""
-                image_data = []
-                for idx in range(3):
-                    image_data.append(np.array(self.connection.root.snap_image(idx)))
-                self.image_data = image_data
-                sleep(.05)
+        def retrieve_data():
+            def do_change(data):
+                self.image_data = msgpack.unpackb(data)
+            self.parameters.live_imgs.change(do_change)
 
         self.thread = Thread(target = retrieve_data, args = tuple(), daemon=True)
         self.thread.start()
-        #thread.join()
 
     def enable_trigger(self, enable, cam_idxs):
         self.connection.root.enable_trigger(enable, cam_idxs=cam_idxs)
@@ -80,7 +70,15 @@ class Connection:
         self.connection.root.cams[cam_idx].cam.wait_til_frame_ready()
 
     def record_background(self):
+        self.parameters.trigger.value = False
+        # stop continuous acquisition
+        self.parameters.continuous_acquisition.value = False
+        # wait some time to be sure that acquisition is really stopped
+        # we have to do this because it may be waiting for a trigger
+        sleep(.75)
         self.connection.root.record_background()
+        # start continuous acquisition again
+        self.parameters.continuous_acquisition.value = True
 
     def clear_background(self):
         self.parameters.background.value = None

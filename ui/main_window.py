@@ -223,16 +223,16 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.cropY1, 1, 2, 1, 1)
         self.verticalLayout_5.addLayout(self.gridLayout)
         self.verticalLayout_2.addWidget(self.groupBox_2)
-        self.groupBox_4 = QtWidgets.QGroupBox(self.centralwidget)
+        self.groupBox_4 = ConfigureRecordingBox(self.centralwidget)
         self.groupBox_4.setObjectName("groupBox_4")
         self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.groupBox_4)
         self.verticalLayout_6.setObjectName("verticalLayout_6")
         self.checkBox_2 = QtWidgets.QCheckBox(self.groupBox_4)
         self.checkBox_2.setObjectName("checkBox_2")
         self.verticalLayout_6.addWidget(self.checkBox_2)
-        self.checkBox_3 = QtWidgets.QCheckBox(self.groupBox_4)
-        self.checkBox_3.setObjectName("checkBox_3")
-        self.verticalLayout_6.addWidget(self.checkBox_3)
+        self.enableTrigger = QtWidgets.QCheckBox(self.groupBox_4)
+        self.enableTrigger.setObjectName("enableTrigger")
+        self.verticalLayout_6.addWidget(self.enableTrigger)
         self.pushButton = QtWidgets.QPushButton(self.groupBox_4)
         self.pushButton.setObjectName("pushButton")
         self.verticalLayout_6.addWidget(self.pushButton)
@@ -267,12 +267,13 @@ class Ui_MainWindow(object):
         self.label.setText(_translate("MainWindow", "y"))
         self.groupBox_4.setTitle(_translate("MainWindow", "Atom number"))
         self.checkBox_2.setText(_translate("MainWindow", "record"))
-        self.checkBox_3.setText(_translate("MainWindow", "wait for trigger"))
+        self.enableTrigger.setText(_translate("MainWindow", "wait for trigger"))
         self.pushButton.setText(_translate("MainWindow", "Clear"))
         self.label_3.setText(_translate("MainWindow", "data points"))
 
 from atom_number_widget import AtomNumberWidget
 from camera_widget import CameraWidget
+from configure_recording_box import ConfigureRecordingBox
 from crop_box_widget import CropBoxWidget
 from record_background_box import RecordBackgroundBox
 from select_exposure_time import SelectExposureTimeWidget
