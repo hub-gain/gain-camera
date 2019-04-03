@@ -1,3 +1,7 @@
+import numpy as np
+from utils import EXPOSURES
+
+
 class Parameter:
     def __init__(self, min_=None, max_=None, start=None, wrap=False):
         self.min = min_
@@ -44,13 +48,15 @@ class Parameter:
 
 class Parameters:
     def __init__(self):
-        self.exposure = Parameter(min_=-13, max_=-2, start=-2)
+        self.exposure = Parameter(start=-2, min_=np.min(EXPOSURES), max_=np.max(EXPOSURES))
         self.background = Parameter()
         self.crop_enabled = Parameter(start=True)
         self.crop = Parameter(start=(0, 744, 0, 480))
         self.live_imgs = Parameter()
         self.trigger = Parameter(start=False)
         self.continuous_acquisition = Parameter(start=False)
+
+        # the following parameters are used by the live view client
         self.recording = Parameter(start=True)
         self.recording_length = Parameter(start=400)
         self.clear_recording = Parameter(start=False)

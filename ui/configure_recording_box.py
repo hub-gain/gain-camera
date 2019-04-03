@@ -39,7 +39,7 @@ class ConfigureRecordingBox(QtWidgets.QGroupBox, CustomWidget):
         self.trigger_checkbox.setCheckState(2 if trigger else 0)
 
     def change_trigger(self, trigger):
-        self.connection.parameters.trigger.value = trigger
+        self.connection.enable_trigger(trigger)
 
     def react_to_recording_change(self, recording):
         self.recording_checkbox.setCheckState(2 if recording else 0)

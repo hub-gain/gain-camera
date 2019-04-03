@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 from pyqtgraph.Qt import QtCore, QtGui
 from PyQt5 import QtWidgets
 
-from gain_connection import Connection, FakeConnection
+from connection import Connection, FakeConnection
 from widgets import CustomWidget
 
 
@@ -31,7 +31,7 @@ class CameraApplication:
         self.atom_numbers = []
 
         self.connection.connect()
-        self.connection.run_acquisition_thread()
+        self.connection.run_continuous_acquisition()
         self.draw_images()
 
         for instance in CustomWidget.instances:

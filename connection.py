@@ -6,6 +6,7 @@ import numpy as np
 from time import sleep
 from threading import Thread
 from gain_camera.parameters import Parameters
+from gain_camera.utils import EXPOSURES
 
 from pyqtgraph.Qt import QtCore
 
@@ -23,7 +24,7 @@ class FakeConnection:
     def connect(self):
         pass
 
-    def run_acquisition_thread(self):
+    def run_continuous_acquisition(self):
         pass
 
     def record_background(self):
@@ -43,19 +44,22 @@ class Connection:
             self.uuid
         )
 
-    def run_acquisition_thread(self):
+    def run_continuous_acquisition(self):
         self.parameters.continuous_acquisition.value = True
 
-        def retrieve_data():
-            def do_change(data):
-                self.image_data = msgpack.unpackb(data)
-            self.parameters.live_imgs.change(do_change)
+        def do_change(data):
+            self.image_data = msgpack.unpackb(data)
+        self.parameters.live_imgs.change(do_change)
 
-        self.thread = Thread(target = retrieve_data, args = tuple(), daemon=True)
-        self.thread.start()
+    def stop_continuous_acquisition(self):
+        self.parameters.continuous_acquisition.value = False
 
-    def enable_trigger(self, enable, cam_idxs):
-        self.connection.root.enable_trigger(enable, cam_idxs=cam_idxs)
+    def enable_trigger(self, enable):
+        self.parameters.trigger.value = enable
+
+    def set_exposure_time(self, exposure):
+        assert exposure in EXPOSURES
+        self.parameters.exposure.value = exposure
 
     def snap_image(self, cam_idx):
         return np.array(self.connection.root.cams[cam_idx].snap_image())
@@ -130,7 +134,7 @@ class RemoteParameters:
         self._listeners.setdefault(param.name, [])
         self._listeners[param.name].append(function)
 
-    def call_listeners(self, something=None):
+    def call_listeners(self):
         for param_name in self.remote.get_listener_queue(self.uuid):
             value = getattr(self, param_name).value
 

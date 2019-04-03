@@ -1,11 +1,12 @@
 import numpy as np
 from PyQt5 import QtGui, QtWidgets
 from widgets import CustomWidget
+from gain_camera.utils import EXPOSURES
 
 MAX_TIME = 250 # in ms
 
 class SelectExposureTimeWidget(QtWidgets.QComboBox, CustomWidget):
-    values = [int(v) for v in np.arange(-2, -13.1, -1)]
+    values = [int(v) for v in EXPOSURES]
     value_names = [
         '%d (%.2f ms)' % (v, MAX_TIME / (2**idx))
         for idx, v in enumerate(values)

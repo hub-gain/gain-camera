@@ -17,11 +17,10 @@ from time import time, sleep
 from matplotlib import pyplot as plt
 from rpyc.utils.server import ThreadedServer
 
-from gain_camera.utils import img2count, crop_imgs
+from gain_camera.utils import img2count, crop_imgs, EXPOSURES
 from gain_camera.parameters import Parameters
 
 
-EXPOSURES = [int(v) for v in np.arange(-2, -13.1, -1)]
 MSG_STOP = 0
 MSG_TRIGGER_ON = 1
 MSG_TRIGGER_OFF = 2
@@ -70,7 +69,6 @@ class CameraService(rpyc.Service):
     def __init__(self):
         self.ic = icpy3.IC_ImagingControl()
         self.ic.init_library()
-        print('INT!')
         self.cams = [Camera(self.ic, idx) for idx in range(3)]
         cams = self.cams
 
@@ -108,10 +106,8 @@ class CameraService(rpyc.Service):
 
     def _register_listeners(self):
         def change_exposure(exposure):
-            print('CHANGE!')
             for cam in self.cams:
                 cam.set_exposure(exposure)
-            print('CHANGED!')
         self.parameters.exposure.change(change_exposure)
         def change_trigger(trigger):
             if self.acquisition_thread is not None:
@@ -144,7 +140,7 @@ class CameraService(rpyc.Service):
                 msgs = []
                 while child_pipe.poll():
                     msgs.append(child_pipe.recv())
-                
+
                 should_stop = False
                 for msg in msgs:
                     if msg == MSG_STOP:
@@ -155,7 +151,7 @@ class CameraService(rpyc.Service):
                         self.enable_trigger(False)
                 if should_stop:
                     break
-                
+
                 trigger = self.parameters.trigger.value
                 if trigger:
                     no_trigger = False
@@ -170,7 +166,7 @@ class CameraService(rpyc.Service):
 
                 imgs = [np.array(self.retrieve_image(idx)) for idx, cam in enumerate(self.cams)]
                 self.parameters.live_imgs.value  = msgpack.packb(imgs)
-                
+
                 if trigger:
                     reset = [cam.cam.reset_frame_ready() for cam in self.cams]
                 else:
@@ -181,7 +177,7 @@ class CameraService(rpyc.Service):
                 #    self.continuous_camera_images[idx] = np.array(cam.snap_image())
                 #[np.array(cam.snap_image()) for cam in self.cams]
                 #self.parameters.live_imgs.value = [np.array(cam.snap_image()) for cam in self.cams]
-                
+
 
         pipe, child_pipe = Pipe()
 
@@ -197,7 +193,7 @@ class CameraService(rpyc.Service):
     def record_background(self):
         exposures = EXPOSURES
         backgrounds = []
-        
+
         for cam in self.cams:
             try:
                 cam.cam.suspend_live()
@@ -218,85 +214,11 @@ class CameraService(rpyc.Service):
 
         self.parameters.background.value = backgrounds
 
-    def record_series(self):
-        cams = self.cams
-        
-        self.enable_trigger(True)
-
-        SMOT = 0
-        MOT = 1
-
-        cams = self.cams
-        for cam in cams:
-            cam.cam.reset_frame_ready()
-
-        d = {}
-        last_time = time()
-        times = []
-        atom_numbers = []
-
-        for j in [SMOT, MOT]:
-            print('SMOT' if j == SMOT else 'MOT')
-            for img_number in range(10000000):
-                print('n', img_number)
-
-                imgs = []
-
-                for cam in cams:
-                    cam.cam.wait_til_frame_ready()
-                    imgs.append(cam.retrieve_image())
-
-                new_time = time()
-                times.append(new_time)
-
-                for cam in cams:
-                    # this is necessary for all cams in order to flush img cache
-                    cam.cam.reset_frame_ready()
-
-                atom_number = np.mean([img2count(img, cam.cam.exposure.value) for img, cam in zip(imgs, cams)])
-                atom_numbers.append(atom_number)
-
-                if new_time - last_time > 1 and img_number > 0:
-                    #for img in imgs:
-                    #    plt.pcolormesh(img)
-                    #    plt.show()
-                    if j == SMOT:
-                        d['N_smot'] = atom_number
-                        d['img_smot_live'] = crop_imgs(last_imgs)
-                        d['img_smot_after'] = crop_imgs(imgs)
-                    else:
-                        d['N_mot'] = atom_number
-                        d['img_mot'] = crop_imgs(imgs)
-
-                    break
-
-                last_time = new_time
-                last_imgs = imgs
-
-        times = [_ - times[0] for _ in times]
-        #plt.plot(times, atom_numbers)
-        #plt.grid()
-        #plt.show()
-
-        d.update({
-            'times': times,
-            'atom_numbers': atom_numbers,
-        })
-
-        #data.append(d)
-
-        #plt.plot([_['N_smot'] for _ in data])
-        #plt.plot([_['N_mot'] for _ in data])
-        #plt.grid()
-        #plt.show()
-        return d
-
     def enable_trigger(self, enable, cam_idxs=None):
-        print('enable!', enable)
         if cam_idxs is None:
             cam_idxs = [0, 1, 2]
         cams = [self.cams[idx] for idx in cam_idxs]
-        
+
         if enable:
             for cam in cams:
                 try:
@@ -318,19 +240,19 @@ class CameraService(rpyc.Service):
             for cam in cams:
                 cam.cam.enable_trigger(False)
                 sleep(.1)
-    
+
     def _subtract_background(self, img, idx):
         bg = self.parameters.background.value
         exposure = self.parameters.exposure.value
         exposure_idx = EXPOSURES.index(exposure)
-        
+
         if bg is None:
             return img
-        
+
         img = img - bg[exposure_idx][idx]
         img[img < 0] = 0
         return img
-    
+
     def snap_image(self, idx):
         return self._subtract_background(self.cams[idx].snap_image(), idx)
 

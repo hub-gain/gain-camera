@@ -1,6 +1,9 @@
 import numpy as np
 
 
+EXPOSURES = [int(v) for v in np.arange(-2, -13.1, -1)]
+
+
 def img2count(img, exposure):
     count = np.sum(
         np.sum(img)) / 1e9 / (10 * (2 ** exposure)
