@@ -9,7 +9,7 @@ os.chdir(os.path.join(folder, 'dll'))
 try:
     import icpy3
 except OSError:
-    raise Exception('unable to import icpy3. Check that TIS Grabber DLL is in the right folder')    
+    raise Exception('unable to import icpy3. Check that TIS Grabber DLL is in the right folder')
 
 import rpyc
 import numpy as np
@@ -30,6 +30,7 @@ from gain_camera.parameters import Parameters
 MSG_STOP = 0
 MSG_TRIGGER_ON = 1
 MSG_TRIGGER_OFF = 2
+MSG_CHANGE_EXPOSURE = 3
 
 
 class Camera:
@@ -95,8 +96,15 @@ class CameraService(rpyc.Service):
     def _register_listeners(self):
         """Listens to parameter changes and controls the camera accordingly."""
         def change_exposure(exposure):
-            for cam in self.cams:
-                cam.set_exposure(exposure)
+            if self.acquisition_thread is not None:
+                # acquisition thread is running --> it should handle setting the
+                # trigger (setting it directly may cause some problems).
+                self.acquisition_thread_pipe.send(
+                    MSG_CHANGE_EXPOSURE
+                )
+            else:
+                for cam in self.cams:
+                    cam.set_exposure(exposure)
         self.parameters.exposure.change(change_exposure)
 
         def change_trigger(trigger):
@@ -146,6 +154,10 @@ class CameraService(rpyc.Service):
                         self.enable_trigger(True)
                     elif msg == MSG_TRIGGER_OFF:
                         self.enable_trigger(False)
+                    elif msg == MSG_CHANGE_EXPOSURE:
+                        exposure = self.parameters.exposure.value
+                        for cam in self.cams:
+                            cam.set_exposure(exposure)
                 if should_stop:
                     break
 
