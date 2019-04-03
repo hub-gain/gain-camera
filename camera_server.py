@@ -5,7 +5,8 @@ folder = os.path.join(*os.path.split(
 )[:-1])
 
 # try to import icpy3
-os.chdir(os.path.join(folder, 'dll'))
+#os.chdir(os.path.join(folder, 'dll'))
+os.chdir('C:\\Users\\gain\\documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32')
 try:
     import icpy3
 except OSError:
