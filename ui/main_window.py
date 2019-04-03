@@ -242,6 +242,7 @@ class Ui_MainWindow(object):
         self.label_4.setObjectName("label_4")
         self.horizontalLayout_2.addWidget(self.label_4)
         self.recordingLength = QtWidgets.QSpinBox(self.groupBox_4)
+        self.recordingLength.setMaximum(999999)
         self.recordingLength.setObjectName("recordingLength")
         self.horizontalLayout_2.addWidget(self.recordingLength)
         self.label_3 = QtWidgets.QLabel(self.groupBox_4)

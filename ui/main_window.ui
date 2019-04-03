@@ -595,7 +595,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QSpinBox" name="recordingLength"/>
+            <widget class="QSpinBox" name="recordingLength">
+             <property name="maximum">
+              <number>999999</number>
+             </property>
+            </widget>
            </item>
            <item>
             <widget class="QLabel" name="label_3">
