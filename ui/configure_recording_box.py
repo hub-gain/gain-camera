@@ -17,7 +17,7 @@ class ConfigureRecordingBox(QtWidgets.QGroupBox, CustomWidget):
         self.trigger_checkbox.stateChanged.connect(self.change_trigger)
         self.recording_checkbox.stateChanged.connect(self.change_recording)
         self.recording_length_input.valueChanged.connect(self.change_recording_length)
-        self.clear_recording_button.clicked.connect(self.clear_recording())
+        self.clear_recording_button.clicked.connect(self.clear_recording)
 
     @property
     def trigger_checkbox(self):
