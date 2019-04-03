@@ -1,20 +1,17 @@
 import os
-import dill
-import pickle
-import rpyc
-import numpy as np
-from multiprocessing import Pipe
-from threading import Thread
+os.chdir('C:\\Users\\gain\\Documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32')
 
+import rpyc
+import icpy3
+import numpy as np
 import msgpack
 import msgpack_numpy as m
 m.patch()
 
-os.chdir('C:\\Users\\gain\\Documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32')
-import icpy3
-
 from time import time, sleep
+from threading import Thread
 from matplotlib import pyplot as plt
+from multiprocessing import Pipe
 from rpyc.utils.server import ThreadedServer
 
 from gain_camera.utils import img2count, crop_imgs, EXPOSURES
@@ -28,17 +25,22 @@ MSG_TRIGGER_OFF = 2
 
 class Camera:
     def __init__(self, ic, idx):
-        filename = 'camera%d' % idx
+        # FIXME: GIT!
+        folder = os.path.join(*os.path.split(
+            os.path.abspath(__file__)
+        )[:-1])
+        filename = os.path.join(folder, 'camera%d' % idx)
+
         try:
             cam = ic.get_device_by_file(filename)
             cam.exposure.value
+            print('successfully loaded camera config from %s' % filename)
         except:
-            print('opening camera %d' % idx)
+            print('failed to load camera config from %s' % filename)
+            print('opening camera dialog for cam %d' % idx)
             cam = ic.get_device_by_dialog()
             cam.save_device_state(filename)
 
-        #cam.exposure.value = -13
-        #cam.exposure.value = -3
         cam.prepare_live()
         self.cam = cam
 
@@ -53,7 +55,7 @@ class Camera:
     def retrieve_image(self):
         [d, img_height, img_width, img_depth] = self.cam.get_image_data()
         img_depth = int(img_depth)
-        img = np.ndarray(buffer = d, dtype = np.uint8, shape = (img_width, img_height, img_depth))
+        img = np.ndarray(buffer=d, dtype=np.uint8, shape=(img_width, img_height, img_depth))
         data = img[:,:,0].astype(np.int16)
 
         return data
@@ -85,38 +87,24 @@ class CameraService(rpyc.Service):
 
         self._register_listeners()
 
-        #cam.set_format(0)
-        #cam.snap_image()
-
-        """input('ready for calibration?')"""
-        """for cam in cams:
-            cam.calibrate()"""
-
-
-        """for cam in cams:
-            cam.cam.enable_continuous_mode(True)
-
-        for i in range(3):
-            # for some strange reason this does not work when inside Camera class
-            cams[i].cam.start_live()
-            if not cams[i].cam.callback_registered:
-                cams[i].cam.register_frame_ready_callback()
-
-            cams[i].cam.enable_trigger(True)"""
-
     def _register_listeners(self):
+        """Listens to parameter changes and controls the camera accordingly."""
         def change_exposure(exposure):
             for cam in self.cams:
                 cam.set_exposure(exposure)
         self.parameters.exposure.change(change_exposure)
+
         def change_trigger(trigger):
             if self.acquisition_thread is not None:
+                # acquisition thread is running --> it should handle setting the
+                # trigger (setting it directly may cause some problems).
                 self.acquisition_thread_pipe.send(
                     MSG_TRIGGER_ON if trigger else MSG_TRIGGER_OFF
                 )
             else:
                 self.enable_trigger(trigger)
         self.parameters.trigger.change(change_trigger)
+
         def continuous_acquisition(enable):
             if enable:
                 self.start_continuous_acquisition()
@@ -125,6 +113,10 @@ class CameraService(rpyc.Service):
         self.parameters.continuous_acquisition.change(continuous_acquisition)
 
     def start_continuous_acquisition(self):
+        """Starts continuous acquisition mode.
+
+        For this, a thread is started that continuously takes images,
+        transmitting data via a pipe to the main thread."""
         if self.acquisition_thread is not None:
             print('continuous mode already started')
             return
@@ -170,14 +162,8 @@ class CameraService(rpyc.Service):
                 if trigger:
                     reset = [cam.cam.reset_frame_ready() for cam in self.cams]
                 else:
+                    # FIXME: should this be removed? Optional? As parameter?
                     sleep(.1)
-                # FIXME: REMOVE
-                #sleep(.1)
-                #for idx, cam in enumerate(self.cams):
-                #    self.continuous_camera_images[idx] = np.array(cam.snap_image())
-                #[np.array(cam.snap_image()) for cam in self.cams]
-                #self.parameters.live_imgs.value = [np.array(cam.snap_image()) for cam in self.cams]
-
 
         pipe, child_pipe = Pipe()
 
@@ -191,6 +177,8 @@ class CameraService(rpyc.Service):
             self.acquisition_thread_pipe.send(MSG_STOP)
 
     def record_background(self):
+        """Records a background image for all exposures that will be subtracted
+        automatically for future images."""
         exposures = EXPOSURES
         backgrounds = []
 

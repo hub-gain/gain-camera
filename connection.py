@@ -67,13 +67,16 @@ class Connection:
     def retrieve_image(self, cam_idx):
         return np.array(self.connection.root.cams[cam_idx].retrieve_image())
 
+    def wait_till_frame_ready(self, cam_idx):
+        """Waits until camera `cam_idx` receives a trigger."""
+        self.connection.root.cams[cam_idx].cam.wait_til_frame_ready()
+
     def reset_frame_ready(self, cam_idx):
         self.connection.root.cams[cam_idx].cam.reset_frame_ready()
 
-    def wait_till_frame_ready(self, cam_idx):
-        self.connection.root.cams[cam_idx].cam.wait_til_frame_ready()
-
     def record_background(self):
+        """Records a background image for all exposures that will be subtracted
+        automatically for future images."""
         self.parameters.trigger.value = False
         # stop continuous acquisition
         self.parameters.continuous_acquisition.value = False
@@ -85,6 +88,7 @@ class Connection:
         self.parameters.continuous_acquisition.value = True
 
     def clear_background(self):
+        """Clears the background image."""
         self.parameters.background.value = None
 
 
