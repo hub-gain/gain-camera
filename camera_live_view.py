@@ -14,7 +14,6 @@ from pyqtgraph.Qt import QtCore, QtGui
 from PyQt5 import QtWidgets
 
 from gain_connection import Connection, FakeConnection
-from utils import img2count
 from widgets import CustomWidget
 
 
@@ -57,15 +56,7 @@ class CameraApplication:
                 camera_widget.draw_images(image_data)
 
                 atom_number_widget = self.get_widget('atom_numbers')
-                exposure = self.connection.parameters.exposure.value
-                atoms = [
-                    img2count(data, exposure) for data in image_data
-                ]
-                atoms = np.sum(atoms)
-
-                self.atom_numbers.append(float(atoms))
-                self.atom_numbers = self.atom_numbers[-400:]
-                atom_number_widget.draw(self.atom_numbers)
+                atom_number_widget.update(image_data)
 
         QtCore.QTimer.singleShot(50, self.draw_images)
 

@@ -51,6 +51,9 @@ class Parameters:
         self.live_imgs = Parameter()
         self.trigger = Parameter(start=False)
         self.continuous_acquisition = Parameter(start=False)
+        self.recording = Parameter(start=True)
+        self.recording_length = Parameter(start=400)
+        self.clear_recording = Parameter(start=False)
 
         self._remote_listener_queue = {}
 

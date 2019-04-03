@@ -565,7 +565,7 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_6">
          <item>
-          <widget class="QCheckBox" name="checkBox_2">
+          <widget class="QCheckBox" name="enableRecording">
            <property name="text">
             <string>record</string>
            </property>
@@ -579,7 +579,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="clearRecording">
            <property name="text">
             <string>Clear</string>
            </property>
@@ -588,7 +588,14 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
-            <widget class="QSpinBox" name="spinBox_5"/>
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>up to</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="recordingLength"/>
            </item>
            <item>
             <widget class="QLabel" name="label_3">
