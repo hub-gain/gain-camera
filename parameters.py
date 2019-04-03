@@ -1,5 +1,5 @@
 import numpy as np
-from utils import EXPOSURES
+from gain_camera.utils import EXPOSURES
 
 
 class Parameter:

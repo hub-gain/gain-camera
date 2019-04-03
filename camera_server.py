@@ -1,8 +1,17 @@
 import os
-os.chdir('C:\\Users\\gain\\Documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32')
+
+folder = os.path.join(*os.path.split(
+    os.path.abspath(__file__)
+)[:-1])
+
+# try to import icpy3
+os.chdir(os.path.join(folder, 'dll'))
+try:
+    import icpy3
+except OSError:
+    raise Exception('unable to import icpy3. Check that TIS Grabber DLL is in the right folder')    
 
 import rpyc
-import icpy3
 import numpy as np
 import msgpack
 import msgpack_numpy as m
@@ -25,11 +34,7 @@ MSG_TRIGGER_OFF = 2
 
 class Camera:
     def __init__(self, ic, idx):
-        # FIXME: GIT!
-        folder = os.path.join(*os.path.split(
-            os.path.abspath(__file__)
-        )[:-1])
-        filename = os.path.join(folder, 'camera%d' % idx)
+        filename = os.path.join(folder, 'config', 'camera%d' % idx)
 
         try:
             cam = ic.get_device_by_file(filename)
