@@ -34,28 +34,42 @@ MSG_CHANGE_EXPOSURE = 3
 
 
 class Camera:
-    def __init__(self, ic, idx):
+    def __init__(self, idx):
+        self.ic = icpy3.IC_ImagingControl()
+        self.ic.init_library()
         filename = os.path.join(folder, 'config', 'camera%d' % idx)
 
         try:
-            cam = ic.get_device_by_file(filename)
+            cam = self.ic.get_device_by_file(filename)
             cam.exposure.value
+            cam.exposure.value = -2
             print('successfully loaded camera config from %s' % filename)
         except:
             print('failed to load camera config from %s' % filename)
             print('opening camera dialog for cam %d' % idx)
-            cam = ic.get_device_by_dialog()
+            cam = self.ic.get_device_by_dialog()
             cam.save_device_state(filename)
 
+        cam.stop_live()
+        
+        #formats = cam.list_video_formats()
+        cam.set_video_format('Y800 (744x480)')
+
+        # this is very important! If the frame rate is higher than 15,
+        # accessing 3 cameras at the same time does not work!
+        # see the comment at
+        # https://www.theimagingsource.com/support/documentation/ic-imaging-control-cpp/meth_descGrabber_prepareLive.htm
+        cam.set_frame_rate(10)
+
         cam.prepare_live()
+        cam.enable_continuous_mode(True)
+        cam.start_live(show_display=False)
+
         self.cam = cam
 
     def snap_image(self):
-        self.cam.start_live()
         self.cam.snap_image()
         data = self.retrieve_image()
-        self.cam.suspend_live()
-
         return data
 
     def retrieve_image(self):
@@ -75,16 +89,7 @@ class Camera:
 
 class CameraService(rpyc.Service):
     def __init__(self):
-        self.ic = icpy3.IC_ImagingControl()
-        self.ic.init_library()
-        self.cams = [Camera(self.ic, idx) for idx in range(3)]
-        cams = self.cams
-
-        for cam in cams:
-            try:
-                cam.cam.suspend_live()
-            except:
-                pass
+        self.cams = [Camera(idx) for idx in range(3)]
 
         self.parameters = Parameters()
 
@@ -136,11 +141,6 @@ class CameraService(rpyc.Service):
         print('starting continuous mode')
 
         def do(child_pipe):
-            for cam in self.cams:
-                cam.cam.enable_continuous_mode(True)
-                cam.cam.start_live(show_display=False)
-                sleep(0.05)
-
             while True:
                 msgs = []
                 while child_pipe.poll():
@@ -157,30 +157,34 @@ class CameraService(rpyc.Service):
                     elif msg == MSG_CHANGE_EXPOSURE:
                         exposure = self.parameters.exposure.value
                         for cam in self.cams:
-                            cam.set_exposure(exposure)
+                            cam.cam.exposure.value = exposure
                 if should_stop:
                     break
 
                 trigger = self.parameters.trigger.value
                 if trigger:
-                    no_trigger = False
+                    all_were_triggered = True
                     for cam in self.cams:
                         if cam.cam.wait_til_frame_ready(500) == -1:
-                            no_trigger = True
+                            # no trigger received, let's try again in the next iteration
+                            all_were_triggered = False
                             break
-                    if no_trigger:
-                        # no trigger received, let's try again in the next iteration
+                    
+                    if not all_were_triggered:
                         print('no trigger')
                         continue
+                
+                imgs = []
+                for idx, cam in enumerate(self.cams):
+                    imgs.append(np.array(self.retrieve_image(idx)))
 
-                imgs = [np.array(self.retrieve_image(idx)) for idx, cam in enumerate(self.cams)]
                 self.parameters.live_imgs.value  = msgpack.packb(imgs)
 
                 if trigger:
                     reset = [cam.cam.reset_frame_ready() for cam in self.cams]
                 else:
                     # FIXME: should this be removed? Optional? As parameter?
-                    sleep(.1)
+                    sleep(.05)
 
         pipe, child_pipe = Pipe()
 
@@ -198,27 +202,27 @@ class CameraService(rpyc.Service):
         automatically for future images."""
         exposures = EXPOSURES
         backgrounds = []
-
-        for cam in self.cams:
-            try:
-                cam.cam.suspend_live()
-                cam.cam.enable_continuous_mode(False)
-                print('suspend successful!')
-            except:
-                print('suspend failed')
-                pass
+        
+        self.enable_trigger(False)
 
         for idx, exposure in enumerate(exposures):
-            for cam in self.cams:
+            print(exposure)
+            for cam in self.cams:                
                 cam.set_exposure(int(exposure))
-                cam.snap_image()
+            
+            sleep(.5)
 
             backgrounds.append(
-                [cam.snap_image() for cam in self.cams]
+                [cam.retrieve_image() for cam in self.cams]
             )
 
-        self.parameters.background.value = backgrounds
-
+        self.parameters.background.value = backgrounds    
+        
+        if self.parameters.trigger.value:
+            self.enable_trigger(True)
+        for cam in self.cams:
+            cam.set_exposure(self.parameters.exposure.value)
+    
     def enable_trigger(self, enable, cam_idxs=None):
         if cam_idxs is None:
             cam_idxs = [0, 1, 2]
@@ -226,25 +230,12 @@ class CameraService(rpyc.Service):
 
         if enable:
             for cam in cams:
-                try:
-                    cam.cam.suspend_live()
-                except:
-                    print('suspend failed')
-                    pass
-
-            for cam in cams:
-                cam.cam.enable_continuous_mode(True)
-                sleep(.1)
-
-                cam.cam.start_live()
                 if not cam.cam.callback_registered:
                     cam.cam.register_frame_ready_callback()
                 cam.cam.enable_trigger(True)
-                sleep(.1)
         else:
             for cam in cams:
                 cam.cam.enable_trigger(False)
-                sleep(.1)
 
     def _subtract_background(self, img, idx):
         bg = self.parameters.background.value
