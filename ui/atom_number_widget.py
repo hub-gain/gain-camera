@@ -4,7 +4,7 @@ from widgets import CustomWidget
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 
-from utils import img2count
+from gain_camera.utils import img2count
 
 
 class AtomNumberWidget(pg.PlotWidget, CustomWidget):
