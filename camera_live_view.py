@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 from pyqtgraph.Qt import QtCore, QtGui
 from PyQt5 import QtWidgets
 
-from connection import Connection, FakeConnection
+from gain_camera.connection import Connection, FakeConnection
 from widgets import CustomWidget
 
 
@@ -65,7 +65,7 @@ class CameraApplication:
 
 
 if __name__ == '__main__':
-    from ui.main_window import Ui_MainWindow
+    from gain_camera.ui.main_window import Ui_MainWindow
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
