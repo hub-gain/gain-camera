@@ -138,11 +138,12 @@ class RemoteParameters:
         self._listeners.setdefault(param.name, [])
         self._listeners[param.name].append(function)
 
-    def call_listeners(self):
+    def call_listeners(self, no_timer=False):
         for param_name in self.remote.get_listener_queue(self.uuid):
             value = getattr(self, param_name).value
 
             for listener in self._listeners[param_name]:
                 listener(value)
 
-        QtCore.QTimer.singleShot(100, self.call_listeners)
+        if not no_timer:
+            QtCore.QTimer.singleShot(100, self.call_listeners)
