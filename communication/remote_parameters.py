@@ -57,12 +57,12 @@ class RemoteParameters:
     def register_listener(self, param, callback):
         self.remote.exposed_register_remote_listener(self.uuid, param.name, callback)
 
-    def call_listeners(self, no_timer=False):
+    def call_listeners(self, auto_queue=True):
         # this causes queued remote calls to get processed, see
         # https://rpyc.readthedocs.io/en/latest/tutorial/tut5.html#tut5
         str(self.remote)
 
-        if not no_timer:
+        if auto_queue:
             QtCore.QTimer.singleShot(100, self.call_listeners)
 
     def _get_param(self, param_name):
