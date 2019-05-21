@@ -1,3 +1,11 @@
+"""
+    gain_camera.camera_server
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    Starts a server that controls the cameras.
+    Use `gain_camera.connection` to access it programmatically or open
+    `cain_camera.camera_live_view` to view the camera GUI.
+"""
 import os
 
 folder = os.path.join(*os.path.split(
@@ -26,6 +34,7 @@ from rpyc.utils.server import ThreadedServer
 
 from gain_camera.utils import img2count, crop_imgs, EXPOSURES
 from gain_camera.parameters import Parameters
+from gain_camera.communication.server import BaseService
 
 
 MSG_STOP = 0
@@ -52,7 +61,7 @@ class Camera:
             cam.save_device_state(filename)
 
         cam.stop_live()
-        
+
         #formats = cam.list_video_formats()
         cam.set_video_format('Y800 (744x480)')
 
@@ -88,11 +97,11 @@ class Camera:
         self.cam.exposure.value = value
 
 
-class CameraService(rpyc.Service):
+class CameraService(BaseService):
     def __init__(self):
-        self.cams = [Camera(idx) for idx in range(3)]
+        super().__init__(Parameters)
 
-        self.parameters = Parameters()
+        self.cams = [Camera(idx) for idx in range(3)]
 
         self.acquisition_thread = None
         self.continuous_camera_images = [[], [], []]
@@ -139,6 +148,7 @@ class CameraService(rpyc.Service):
         if self.acquisition_thread is not None:
             print('continuous mode already started')
             return
+
         print('starting continuous mode')
 
         def do(child_pipe):
@@ -170,21 +180,20 @@ class CameraService(rpyc.Service):
                             # no trigger received, let's try again in the next iteration
                             all_were_triggered = False
                             break
-                    
+
                     if not all_were_triggered:
                         print('no trigger')
                         continue
-                
+
                 imgs = []
                 for idx, cam in enumerate(self.cams):
-                    imgs.append(np.array(self.retrieve_image(idx)))
+                    imgs.append(np.array(self.exposed_retrieve_image(idx)))
 
                 self.parameters.live_imgs.value  = msgpack.packb(imgs)
 
                 if trigger:
                     reset = [cam.cam.reset_frame_ready() for cam in self.cams]
                 else:
-                    # FIXME: should this be removed? Optional? As parameter?
                     sleep(.05)
 
         pipe, child_pipe = Pipe()
@@ -198,32 +207,32 @@ class CameraService(rpyc.Service):
             self.acquisition_thread = None
             self.acquisition_thread_pipe.send(MSG_STOP)
 
-    def record_background(self):
+    def exposed_record_background(self):
         """Records a background image for all exposures that will be subtracted
         automatically for future images."""
         exposures = EXPOSURES
         backgrounds = []
-        
+
         self.enable_trigger(False)
 
         for idx, exposure in enumerate(exposures):
             print(exposure)
-            for cam in self.cams:                
+            for cam in self.cams:
                 cam.set_exposure(int(exposure))
-            
+
             sleep(.5)
 
             backgrounds.append(
                 [cam.retrieve_image() for cam in self.cams]
             )
 
-        self.parameters.background.value = backgrounds    
-        
+        self.parameters.background.value = backgrounds
+
         if self.parameters.trigger.value:
             self.enable_trigger(True)
         for cam in self.cams:
             cam.set_exposure(self.parameters.exposure.value)
-    
+
     def enable_trigger(self, enable, cam_idxs=None):
         if cam_idxs is None:
             cam_idxs = [0, 1, 2]
@@ -250,19 +259,40 @@ class CameraService(rpyc.Service):
         img[img < 0] = 0
         return img
 
-    def snap_image(self, idx):
-        return self._subtract_background(self.cams[idx].snap_image(), idx)
+    def exposed_snap_image(self, idx, subtract=False):
+        img = self.cams[idx].snap_image()
+        if subtract:
+            return self._subtract_background(img, idx)
+        return img
 
-    def retrieve_image(self, idx):
-        return self._subtract_background(self.cams[idx].retrieve_image(), idx)
+    def exposed_retrieve_image(self, idx, subtract=False):
+        img = self.cams[idx].retrieve_image()
+        if subtract:
+            return self._subtract_background(img, idx)
+        return img
+
+    def exposed_reset_frame_ready(self, cam_idx):
+        return self.cams[cam_idx].cam.reset_frame_ready()
+
+    def exposed_wait_till_frame_ready(self, cam_idx):
+        return self.cams[cam_idx].cam.wait_til_frame_ready()
+
+    def exposed_get_all_parameters(self):
+        return self.parameters.get_all_parameters()
+
+    def exposed_register_remote_listener(self, uuid, param_name, callback):
+        return self.parameters.register_remote_listener(uuid, param_name, callback)
+
+    def exposed_get_listener_queue(self, uuid):
+        return self.parameters.get_listener_queue(uuid)
+
+    def exposed_get_param(self, param_name):
+        return self.parameters._get_param(param_name).value
+
+    def exposed_set_param(self, param_name, value):
+        self.parameters._get_param(param_name).value = value
 
 
 if __name__ == '__main__':
-    # FIXME: security!
-    server = ThreadedServer(CameraService(), port=8000, protocol_config={
-        'allow_all_attrs': True,
-        'allow_setattr': True,
-        'allow_getattr': True,
-        'allow_pickle': True
-    })
+    server = ThreadedServer(CameraService(), port=8000)
     server.start()

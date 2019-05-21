@@ -1,5 +1,12 @@
+"""
+    gain_camera.camera_live_view
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    A GUI for controlling the camera server.
+"""
 import os
 import sys
+import traceback
 # add ui folder to path
 sys.path += [
     os.path.join(*list(
@@ -26,12 +33,11 @@ class CameraApplication:
         app.aboutToQuit.connect(self.shutdown)
 
     def init(self):
-        self.connection = Connection()
-
         self.atom_numbers = []
 
-        self.connection.connect()
+        self.connection = Connection('gain.physik.hu-berlin.de', 8000)
         self.connection.run_continuous_acquisition()
+
         self.draw_images()
 
         for instance in CustomWidget.instances:
@@ -74,7 +80,12 @@ if __name__ == '__main__':
 
     persistent = {}
     def _run():
-        persistent['application'] = CameraApplication(app, MainWindow)
+        while True:
+            try:
+                persistent['application'] = CameraApplication(app, MainWindow)
+            except:
+                print('connection error')
+                traceback.print_exc()
 
     QtCore.QTimer.singleShot(1, _run)
 

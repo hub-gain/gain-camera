@@ -1,12 +1,13 @@
-import rpyc
-import uuid
+"""
+    gain_camera.connection
+    ~~~~~~~~~~~~~~~~~~~~~~
+
+    Contains the client that can be used to access a camera server.
+"""
 import numpy as np
 from time import sleep
-from threading import Thread
-from gain_camera.parameters import Parameters
 from gain_camera.utils import EXPOSURES
-
-from pyqtgraph.Qt import QtCore
+from gain_camera.communication.client import BaseClient
 
 import msgpack
 import msgpack_numpy as m
@@ -16,6 +17,7 @@ m.patch()
 class FakeConnection:
     """Fake connection that can be used for testing the GUI."""
     def __init__(self, *args, **kwargs):
+        from gain_camera.parameters import Parameters
         self.parameters = Parameters()
         self.image_data = [np.array([[1,2], [3,4]])] * 3
 
@@ -32,16 +34,7 @@ class FakeConnection:
         self.parameters.background.value = None
 
 
-class Connection:
-    def connect(self):
-        self.image_data = [None] * 3
-        self.connection = rpyc.connect('gain.physik.hu-berlin.de', 8000)
-        self.uuid = uuid.uuid4().hex
-        self.parameters = RemoteParameters(
-            self.connection.root.parameters,
-            self.uuid
-        )
-
+class Connection(BaseClient):
     def run_continuous_acquisition(self):
         self.parameters.continuous_acquisition.value = True
 
@@ -59,18 +52,18 @@ class Connection:
         assert exposure in EXPOSURES
         self.parameters.exposure.value = exposure
 
-    def snap_image(self, cam_idx):
-        return np.array(self.connection.root.cams[cam_idx].snap_image())
+    def snap_image(self, cam_idx, subtract=False):
+        return self.connection.root.exposed_snap_image(cam_idx, subtract=subtract)
 
-    def retrieve_image(self, cam_idx):
-        return np.array(self.connection.root.cams[cam_idx].retrieve_image())
+    def retrieve_image(self, cam_idx, subtract=False):
+        return self.connection.root.exposed_retrieve_image(cam_idx, subtract=subtract)
 
     def wait_till_frame_ready(self, cam_idx):
         """Waits until camera `cam_idx` receives a trigger."""
-        self.connection.root.cams[cam_idx].cam.wait_til_frame_ready()
+        return self.connection.root.exposed_wait_till_frame_ready(cam_idx)
 
     def reset_frame_ready(self, cam_idx):
-        self.connection.root.cams[cam_idx].cam.reset_frame_ready()
+        return self.connection.root.exposed_reset_frame_ready(cam_idx)
 
     def record_background(self):
         """Records a background image for all exposures that will be subtracted
@@ -81,67 +74,10 @@ class Connection:
         # wait some time to be sure that acquisition is really stopped
         # we have to do this because it may be waiting for a trigger
         sleep(.75)
-        self.connection.root.record_background()
+        self.connection.root.exposed_record_background()
         # start continuous acquisition again
         self.parameters.continuous_acquisition.value = True
 
     def clear_background(self):
         """Clears the background image."""
         self.parameters.background.value = None
-
-
-class RemoteParameter:
-    def __init__(self, parent, remote, name):
-        self.remote = remote
-        self.name = name
-        self.parent = parent
-
-    @property
-    def value(self):
-        return self.remote.value
-
-    @value.setter
-    def value(self, value):
-        self.remote.value = value
-
-    def change(self, function):
-        self.parent.register_listener(self, function)
-
-    def reset(self):
-        self.remote.reset()
-
-    @property
-    def _start(self):
-        return self.remote._start
-
-
-class RemoteParameters:
-    def __init__(self, remote, uuid):
-        self.remote = remote
-        self.uuid = uuid
-
-        for name, param in remote.get_all_parameters():
-            setattr(self, name, RemoteParameter(self, param, name))
-
-        self._listeners = {}
-
-        self.call_listeners()
-
-    def __iter__(self):
-        for name, param in self.remote.get_all_parameters():
-            yield name, param.value
-
-    def register_listener(self, param, function):
-        self.remote.register_remote_listener(self.uuid, param.name)
-        self._listeners.setdefault(param.name, [])
-        self._listeners[param.name].append(function)
-
-    def call_listeners(self, no_timer=False):
-        for param_name in self.remote.get_listener_queue(self.uuid):
-            value = getattr(self, param_name).value
-
-            for listener in self._listeners[param_name]:
-                listener(value)
-
-        if not no_timer:
-            QtCore.QTimer.singleShot(100, self.call_listeners)
