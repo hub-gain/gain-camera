@@ -1,10 +1,9 @@
 """
-    gain_camera.parameters
-    ~~~~~~~~~~~~~~~~~~~~~~
+    gain_camera.communication.server
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Utils for storing and managing a set of parameters.
-    `gain_camera.connection` contains utilities for accessing these parameters
-    remotely.
+    Utils for storing and managing a set of parameters on the server side.
+    `gain_camera.communication.client` contains utils for accessing it.
 """
 import rpyc
 from time import sleep
@@ -56,19 +55,24 @@ class Parameter:
 
 
 class BaseParameters:
-    """Represents a set of parameters.
+    """Represents a set of parameters. In an actual program, it should be
+    sub-classed like this:
+
+        class MyParameters(BaseParameters):
+            def __init__(self):
+                self.param1 = Parameter(min_=12, max_=24)
 
     Parameters can be changed like this:
 
-        p = Parameters(...)
-        p.my_param.value = 123
+        p = MyParameters(...)
+        p.param1.value = 123
 
     You can register callback functions like this:
 
         def on_change(value):
             # do something
 
-        p.my_param.change(on_change)
+        p.param1.change(on_change)
     """
     def __init__(self):
         self._remote_listener_queue = {}
@@ -114,6 +118,8 @@ class BaseParameters:
 
 
 class BaseService(rpyc.Service):
+    """A service that provides functionality for seamless integration of
+    parameter access on the client."""
     def __init__(self, parameter_cls):
         self.parameters = parameter_cls()
         self._uuid_mapping = {}
@@ -134,3 +140,15 @@ class BaseService(rpyc.Service):
     def on_disconnect(self, client):
         uuid = self._uuid_mapping[client]
         self.parameters.unregister_remote_listeners(uuid)
+
+    def exposed_get_param(self, param_name):
+        return self.parameters._get_param(param_name).value
+
+    def exposed_set_param(self, param_name, value):
+        self.parameters._get_param(param_name).value = value
+
+    def exposed_get_all_parameters(self):
+        return self.parameters.get_all_parameters()
+
+    def exposed_register_remote_listener(self, uuid, param_name, callback):
+        return self.parameters.register_remote_listener(uuid, param_name, callback)

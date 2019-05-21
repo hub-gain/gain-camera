@@ -1,8 +1,9 @@
 """
-    gain_camera.connection
-    ~~~~~~~~~~~~~~~~~~~~~~
+    gain_camera.communication.client
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Contains the client that can be used to access a camera server.
+    Contains the client that can be used to access a service with easy access
+    to the server's parameters.
 """
 import rpyc
 import uuid

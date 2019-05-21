@@ -56,3 +56,4 @@ class ConfigureRecordingBox(QtWidgets.QGroupBox, CustomWidget):
 
     def clear_recording(self):
         self.connection.parameters.clear_recording.value = True
+        self.connection.parameters.clear_recording.value = False

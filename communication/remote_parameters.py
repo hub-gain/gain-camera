@@ -1,3 +1,6 @@
+from pyqtgraph.Qt import QtCore
+
+
 class RemoteParameter:
     """A helper class for `RemoteParameters`, representing a single remote
     parameter."""

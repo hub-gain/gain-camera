@@ -38,7 +38,6 @@ class AtomNumberWidget(pg.PlotWidget, CustomWidget):
         def clear_recording_changed(clear):
             if clear:
                 self.atom_numbers = []
-                params.clear_recording.value = False
         params.clear_recording.change(clear_recording_changed)
 
         def recording_changed(recording):

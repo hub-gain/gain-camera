@@ -1,3 +1,11 @@
+"""
+    gain_camera.parameters
+    ~~~~~~~~~~~~~~~~~~~~~~
+
+    Contains a definition of the parameters that are used. The parameters' values
+    are accessible by client and server, and both parties can register listeners
+    that are called when a value changes.
+"""
 import numpy as np
 
 from gain_camera.utils import EXPOSURES
@@ -12,9 +20,16 @@ class Parameters(BaseParameters):
         self.background = Parameter()
         self.crop_enabled = Parameter(start=True)
         self.crop = Parameter(start=(0, 744, 0, 480))
-        self.live_imgs = Parameter()
-        self.trigger = Parameter(start=False)
+
+        # are the cameras in continuous acquisition mode?
         self.continuous_acquisition = Parameter(start=False)
+
+        # if the server is in "continuous acquisition" mode, the recorded images
+        # will be stored here
+        self.live_imgs = Parameter()
+
+        # should the cameras wait for an external trigger?
+        self.trigger = Parameter(start=False)
 
         # the following parameters are used by the live view client
         self.recording = Parameter(start=True)

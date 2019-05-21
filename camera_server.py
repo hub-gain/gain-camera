@@ -2,9 +2,11 @@
     gain_camera.camera_server
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Starts a server that controls the cameras.
-    Use `gain_camera.connection` to access it programmatically or open
-    `cain_camera.camera_live_view` to view the camera GUI.
+    Starts a server that has exclusive access to the cameras. Multiple clients
+    may connect to this server.
+
+    Use `gain_camera.connection` to access it programmatically or call
+    `gain_camera.live_view` to open the camera GUI.
 """
 import os
 
@@ -44,6 +46,7 @@ MSG_CHANGE_EXPOSURE = 3
 
 
 class Camera:
+    """Low-level class for accessing a camera. Should not be used directly."""
     def __init__(self, idx):
         self.ic = icpy3.IC_ImagingControl()
         self.ic.init_library()
@@ -97,7 +100,7 @@ class Camera:
         self.cam.exposure.value = value
 
 
-class CameraService(BaseService):
+class CameraControl(BaseService):
     def __init__(self):
         super().__init__(Parameters)
 
@@ -145,6 +148,7 @@ class CameraService(BaseService):
 
         For this, a thread is started that continuously takes images,
         transmitting data via a pipe to the main thread."""
+
         if self.acquisition_thread is not None:
             print('continuous mode already started')
             return
@@ -187,7 +191,7 @@ class CameraService(BaseService):
 
                 imgs = []
                 for idx, cam in enumerate(self.cams):
-                    imgs.append(np.array(self.exposed_retrieve_image(idx)))
+                    imgs.append(np.array(self._retrieve_image(idx)))
 
                 self.parameters.live_imgs.value  = msgpack.packb(imgs)
 
@@ -206,32 +210,6 @@ class CameraService(BaseService):
         if self.acquisition_thread is not None:
             self.acquisition_thread = None
             self.acquisition_thread_pipe.send(MSG_STOP)
-
-    def exposed_record_background(self):
-        """Records a background image for all exposures that will be subtracted
-        automatically for future images."""
-        exposures = EXPOSURES
-        backgrounds = []
-
-        self.enable_trigger(False)
-
-        for idx, exposure in enumerate(exposures):
-            print(exposure)
-            for cam in self.cams:
-                cam.set_exposure(int(exposure))
-
-            sleep(.5)
-
-            backgrounds.append(
-                [cam.retrieve_image() for cam in self.cams]
-            )
-
-        self.parameters.background.value = backgrounds
-
-        if self.parameters.trigger.value:
-            self.enable_trigger(True)
-        for cam in self.cams:
-            cam.set_exposure(self.parameters.exposure.value)
 
     def enable_trigger(self, enable, cam_idxs=None):
         if cam_idxs is None:
@@ -259,6 +237,17 @@ class CameraService(BaseService):
         img[img < 0] = 0
         return img
 
+    def _retrieve_image(self, idx, subtract=False):
+        img = self.cams[idx].retrieve_image()
+        if subtract:
+            return self._subtract_background(img, idx)
+        return img
+
+
+class CameraAPIService(CameraControl):
+    """Contains the public API of the camera server. Notice that you also
+    may control some functionality by setting parameters."""
+
     def exposed_snap_image(self, idx, subtract=False):
         img = self.cams[idx].snap_image()
         if subtract:
@@ -266,10 +255,7 @@ class CameraService(BaseService):
         return img
 
     def exposed_retrieve_image(self, idx, subtract=False):
-        img = self.cams[idx].retrieve_image()
-        if subtract:
-            return self._subtract_background(img, idx)
-        return img
+        return self._retrieve_image(idx, subtract=subtract)
 
     def exposed_reset_frame_ready(self, cam_idx):
         return self.cams[cam_idx].cam.reset_frame_ready()
@@ -277,22 +263,34 @@ class CameraService(BaseService):
     def exposed_wait_till_frame_ready(self, cam_idx):
         return self.cams[cam_idx].cam.wait_til_frame_ready()
 
-    def exposed_get_all_parameters(self):
-        return self.parameters.get_all_parameters()
+    def exposed_record_background(self):
+        """Records a background image for all exposures that will be subtracted
+        automatically for future images."""
+        exposures = EXPOSURES
+        backgrounds = []
 
-    def exposed_register_remote_listener(self, uuid, param_name, callback):
-        return self.parameters.register_remote_listener(uuid, param_name, callback)
+        self.enable_trigger(False)
 
-    def exposed_get_listener_queue(self, uuid):
-        return self.parameters.get_listener_queue(uuid)
+        for idx, exposure in enumerate(exposures):
+            print(exposure)
+            for cam in self.cams:
+                cam.set_exposure(int(exposure))
 
-    def exposed_get_param(self, param_name):
-        return self.parameters._get_param(param_name).value
+            sleep(.5)
 
-    def exposed_set_param(self, param_name, value):
-        self.parameters._get_param(param_name).value = value
+            backgrounds.append(
+                [cam.retrieve_image() for cam in self.cams]
+            )
+
+        self.parameters.background.value = backgrounds
+
+        if self.parameters.trigger.value:
+            self.enable_trigger(True)
+
+        for cam in self.cams:
+            cam.set_exposure(self.parameters.exposure.value)
 
 
 if __name__ == '__main__':
-    server = ThreadedServer(CameraService(), port=8000)
+    server = ThreadedServer(CameraAPIService(), port=8000)
     server.start()

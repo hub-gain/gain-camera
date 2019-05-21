@@ -20,7 +20,7 @@ from matplotlib import pyplot as plt
 from pyqtgraph.Qt import QtCore, QtGui
 from PyQt5 import QtWidgets
 
-from gain_camera.connection import Connection, FakeConnection
+from gain_camera.connection import CameraConnection
 from widgets import CustomWidget
 
 
@@ -33,9 +33,7 @@ class CameraApplication:
         app.aboutToQuit.connect(self.shutdown)
 
     def init(self):
-        self.atom_numbers = []
-
-        self.connection = Connection('gain.physik.hu-berlin.de', 8000)
+        self.connection = CameraConnection('gain.physik.hu-berlin.de', 8000)
         self.connection.run_continuous_acquisition()
 
         self.draw_images()
@@ -48,22 +46,30 @@ class CameraApplication:
         return self.window.findChild(QtCore.QObject, name)
 
     def draw_images(self):
+        """This function is called periodically. It checks if there is any new
+        image data. If yes, it updates the 2D plots and adds a data point to the
+        atom number plot."""
         image_data = self.connection.image_data
+
         if image_data is not None:
             self.connection.image_data = None
 
+            # check that it is a real image (may be undefined after startup)
             data_not_good = False
             for d in image_data:
                 if d is None:
                     data_not_good = True
 
             if not data_not_good:
+                # plot 2D images
                 camera_widget = self.get_widget('cameras')
                 camera_widget.draw_images(image_data)
 
+                # add data point to atom number plot
                 atom_number_widget = self.get_widget('atom_numbers')
                 atom_number_widget.update(image_data)
 
+        # queue this function again
         QtCore.QTimer.singleShot(50, self.draw_images)
 
     def shutdown(self):
