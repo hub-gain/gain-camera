@@ -135,7 +135,12 @@ class BaseService(rpyc.Service):
             for callback, value in self.parameters.get_listener_queue(uuid):
                 callback(value)
 
-            sleep(.05)
+            # this seems to be useless, but passes the context to RPYC, allowing
+            # it to handle requests from the client
+            # see https://rpyc.readthedocs.io/en/latest/tutorial/tut5.html#tut5
+            str(client.root)
+
+            sleep(.01)
 
     def on_disconnect(self, client):
         uuid = self._uuid_mapping[client]

@@ -11,11 +11,11 @@ class RemoteParameter:
 
     @property
     def value(self):
-        return self.remote.value
+        return self.parent._get_param(self.name)
 
     @value.setter
     def value(self, value):
-        self.remote.value = value
+        return self.parent._set_param(self.name, value)
 
     def change(self, function):
         self.parent.register_listener(self, function)
@@ -63,7 +63,7 @@ class RemoteParameters:
         str(self.remote)
 
         if auto_queue:
-            QtCore.QTimer.singleShot(100, self.call_listeners)
+            QtCore.QTimer.singleShot(50, self.call_listeners)
 
     def _get_param(self, param_name):
         return self.remote.exposed_get_param(param_name)

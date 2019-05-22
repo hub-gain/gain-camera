@@ -16,6 +16,7 @@ sys.path += [
 import numpy as np
 import pyqtgraph as pg
 
+from time import sleep
 from matplotlib import pyplot as plt
 from pyqtgraph.Qt import QtCore, QtGui
 from PyQt5 import QtWidgets
@@ -89,9 +90,11 @@ if __name__ == '__main__':
         while True:
             try:
                 persistent['application'] = CameraApplication(app, MainWindow)
+                break
             except:
                 print('connection error')
                 traceback.print_exc()
+                sleep(1)
 
     QtCore.QTimer.singleShot(1, _run)
 

@@ -38,6 +38,7 @@ class CameraConnection(BaseClient):
 
         This means that the server will record images as fast as possible and
         store them in `parameters.live_imgs`."""
+        self.image_data = None
         self.parameters.continuous_acquisition.value = True
 
         def do_change(data):
