@@ -191,7 +191,9 @@ class CameraControl(BaseService):
 
                 imgs = []
                 for idx, cam in enumerate(self.cams):
-                    imgs.append(np.array(self._retrieve_image(idx)))
+                    # msgpacking a list takes less bytes than msgpacking a
+                    # numpy array
+                    imgs.append(np.array(self._retrieve_image(idx)).tolist())
 
                 self.parameters.live_imgs.value  = msgpack.packb(imgs)
 
