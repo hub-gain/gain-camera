@@ -17,6 +17,10 @@ sys.path += [
 import numpy as np
 import pyqtgraph as pg
 
+import msgpack
+import msgpack_numpy as m
+m.patch()
+
 from time import sleep
 from matplotlib import pyplot as plt
 from pyqtgraph.Qt import QtCore, QtGui
@@ -40,6 +44,7 @@ class CameraApplication:
         )
         self.connection.run_continuous_acquisition()
 
+        self.install_listeners()
         self.draw_images()
         self.call_listeners()
 
@@ -50,14 +55,28 @@ class CameraApplication:
         """Queries a widget by name."""
         return self.window.findChild(QtCore.QObject, name)
 
+    def install_listeners(self):
+        self.image_data = None
+        self.atom_number_data = []
+
+        def live_imgs_changed(data):
+            if data is not None:
+                self.image_data = msgpack.unpackb(data)
+        self.connection.parameters.live_imgs.change(live_imgs_changed)
+
+        def atom_number_changed(atom_number):
+            if atom_number is not None:
+                self.atom_number_data.append(atom_number)
+        self.connection.parameters.live_atom_number.change(atom_number_changed)
+
     def draw_images(self):
         """This function is called periodically. It checks if there is any new
         image data. If yes, it updates the 2D plots and adds a data point to the
         atom number plot."""
-        image_data = self.connection.image_data
+        image_data = self.image_data
 
         if image_data is not None:
-            self.connection.image_data = None
+            self.image_data = None
 
             # check that it is a real image (may be undefined after startup)
             data_not_good = False
@@ -70,8 +89,9 @@ class CameraApplication:
                 camera_widget = self.get_widget('cameras')
                 camera_widget.draw_images(image_data)
 
-        atom_number_data = self.connection.atom_number_data
+        atom_number_data = self.atom_number_data
         if atom_number_data:
+            self.atom_number_data = []
             # add data point to atom number plot
             atom_number_widget = self.get_widget('atom_numbers')
             atom_number_widget.update(atom_number_data)
