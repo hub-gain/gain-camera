@@ -199,15 +199,15 @@ class CameraControl(BaseService):
 
                 # if recording is enabled, calculate the atom number
                 if self.parameters.recording.value \
-                    and self.parameters.exposure.value is not None
+                    and self.parameters.exposure.value is not None \
                     and self.parameters.recording_length.value is not None:
                     exposure = self.parameters.exposure.value
                     atoms = [
-                        img2count(imgs, exposure) for data in image_data
+                        img2count(data, exposure) for data in imgs
                     ]
-                    self.parameters.live_atom_number = np.sum(atoms)
+                    self.parameters.live_atom_number.value = np.sum(atoms)
                 elif self.parameters.live_atom_number.value is not None:
-                    self.parameters.live_atom_number = None
+                    self.parameters.live_atom_number.value = None
 
                 if trigger:
                     reset = [cam.cam.reset_frame_ready() for cam in self.cams]
