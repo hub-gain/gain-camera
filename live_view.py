@@ -70,9 +70,11 @@ class CameraApplication:
                 camera_widget = self.get_widget('cameras')
                 camera_widget.draw_images(image_data)
 
-                # add data point to atom number plot
-                atom_number_widget = self.get_widget('atom_numbers')
-                atom_number_widget.update(image_data)
+        atom_number_data = self.connection.atom_number_data
+        if atom_number_data:
+            # add data point to atom number plot
+            atom_number_widget = self.get_widget('atom_numbers')
+            atom_number_widget.update(atom_number_data)
 
         # queue this function again
         QtCore.QTimer.singleShot(50, self.draw_images)

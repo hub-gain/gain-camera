@@ -197,6 +197,18 @@ class CameraControl(BaseService):
 
                 self.parameters.live_imgs.value  = msgpack.packb(imgs)
 
+                # if recording is enabled, calculate the atom number
+                if self.parameters.recording.value \
+                    and self.parameters.exposure.value is not None
+                    and self.parameters.recording_length.value is not None:
+                    exposure = self.parameters.exposure.value
+                    atoms = [
+                        img2count(imgs, exposure) for data in image_data
+                    ]
+                    self.parameters.live_atom_number = np.sum(atoms)
+                elif self.parameters.live_atom_number.value is not None:
+                    self.parameters.live_atom_number = None
+
                 if trigger:
                     reset = [cam.cam.reset_frame_ready() for cam in self.cams]
                 else:

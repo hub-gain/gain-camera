@@ -42,6 +42,7 @@ class CameraConnection(BaseClient):
         This means that the server will record images as fast as possible and
         store them in `parameters.live_imgs`."""
         self.image_data = None
+        self.atom_number_data = []
         self.parameters.continuous_acquisition.value = True
 
         def do_change(data):
@@ -49,6 +50,10 @@ class CameraConnection(BaseClient):
                 print('received data')
                 self.image_data = msgpack.unpackb(data)
         self.parameters.live_imgs.change(do_change)
+        def atom_number_changed(atom_number):
+            if atom_number is not None:
+                self.atom_number_data.append(atom_number)
+        self.parameters.live_atom_number.change(atom_number_changed)
 
     def stop_continuous_acquisition(self):
         self.parameters.continuous_acquisition.value = False

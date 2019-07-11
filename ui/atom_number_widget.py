@@ -4,8 +4,6 @@ from widgets import CustomWidget
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph as pg
 
-from gain_camera.utils import img2count
-
 
 class AtomNumberWidget(pg.PlotWidget, CustomWidget):
     def __init__(self, *args, **kwargs):
@@ -50,17 +48,11 @@ class AtomNumberWidget(pg.PlotWidget, CustomWidget):
              and self.exposure is not None \
              and self.recording_length is not None
 
-    def update(self, image_data):
+    def update(self, data):
         if not self.recording or not self.ready:
             return
 
-        exposure = self.exposure
-        atoms = [
-            img2count(data, exposure) for data in image_data
-        ]
-        atoms = np.sum(atoms)
-
-        self.atom_numbers.append(float(atoms))
+        self.atom_numbers += [float(n) for n in data]
         self.clip_atom_number_recording()
         self.plotcurve.setData(self.atom_numbers)
 
