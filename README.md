@@ -31,7 +31,7 @@ for idx in range(3):
     plt.show()
 
 c.enable_trigger(False)
-# start "continuous acquisition" mode. This means that the server records 
+# start "continuous acquisition" mode. This means that the server records
 # images autonomously as fast as possible. The result is saved in the
 # `live_imgs` parameter.
 c.start_continuous_acquisition()
@@ -45,9 +45,9 @@ def new_img_recorded(imgs):
 c.parameters.live_imgs.change(new_img_recorded)
 
 while True:
-    c.parameters.call_listeners(auto_queue=False)
+    c.parameters.call_listeners()
 
     # do something else
-    sleep(5)
+    sleep(.1)
 ```
 

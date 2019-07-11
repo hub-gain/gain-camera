@@ -33,6 +33,9 @@ class CameraConnection(BaseClient):
         plt.pcolormesh(c.parameters.live_imgs.value[0])
         plt.show()
     """
+    def __init__(self, server, port, keep_in_sync=False):
+        super().__init__(server, port, keep_in_sync)
+
     def run_continuous_acquisition(self):
         """Runs continuous acquisition.
 
@@ -42,7 +45,9 @@ class CameraConnection(BaseClient):
         self.parameters.continuous_acquisition.value = True
 
         def do_change(data):
-            self.image_data = msgpack.unpackb(data)
+            if data is not None:
+                print('received data')
+                self.image_data = msgpack.unpackb(data)
         self.parameters.live_imgs.change(do_change)
 
     def stop_continuous_acquisition(self):

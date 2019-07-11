@@ -26,7 +26,7 @@ class Parameters(BaseParameters):
 
         # if the server is in "continuous acquisition" mode, the recorded images
         # will be stored here
-        self.live_imgs = Parameter()
+        self.live_imgs = Parameter(collapsed_sync=True)
 
         # should the cameras wait for an external trigger?
         self.trigger = Parameter(start=False)

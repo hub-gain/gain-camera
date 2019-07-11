@@ -6,6 +6,7 @@
 """
 import os
 import sys
+import signal
 import traceback
 # add ui folder to path
 sys.path += [
@@ -34,10 +35,13 @@ class CameraApplication:
         app.aboutToQuit.connect(self.shutdown)
 
     def init(self):
-        self.connection = CameraConnection('gain.physik.hu-berlin.de', 8000)
+        self.connection = CameraConnection(
+            'gain.physik.hu-berlin.de', 8000, keep_in_sync=True
+        )
         self.connection.run_continuous_acquisition()
 
         self.draw_images()
+        self.call_listeners()
 
         for instance in CustomWidget.instances:
             instance.connection_established(self.connection)
@@ -73,6 +77,10 @@ class CameraApplication:
         # queue this function again
         QtCore.QTimer.singleShot(50, self.draw_images)
 
+    def call_listeners(self):
+        self.connection.parameters.call_listeners()
+        QtCore.QTimer.singleShot(100, self.call_listeners)
+
     def shutdown(self):
         self.app.quit()
 
@@ -97,5 +105,8 @@ if __name__ == '__main__':
                 sleep(1)
 
     QtCore.QTimer.singleShot(1, _run)
+
+    # catch ctrl-c and shutdown
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     sys.exit(app.exec_())
