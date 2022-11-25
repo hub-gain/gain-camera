@@ -51,7 +51,7 @@ class CameraConnection(BaseClient):
     def set_exposure_time(self, exposure):
         assert (
             exposure in EXPOSURES
-        ), "invalid exposure times. Valid values are %s" % str(EXPOSURES)
+        ), f"Invalid exposure times. Valid values are {EXPOSURES}."
         self.parameters.exposure.value = exposure
 
     def snap_image(self, cam_idx, subtract=False):
@@ -85,8 +85,8 @@ class CameraConnection(BaseClient):
         self.parameters.trigger.value = False
         # stop continuous acquisition
         self.parameters.continuous_acquisition.value = False
-        # wait some time to be sure that acquisition is really stopped
-        # we have to do this because it may be waiting for a trigger
+        # wait some time to be sure that acquisition is really stopped we have to do
+        # this because it may be waiting for a trigger
         sleep(0.75)
         self.connection.root.record_background()
         # start continuous acquisition again

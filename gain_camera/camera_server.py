@@ -6,8 +6,9 @@ Use `gain_camera.connection` to access it programmatically or call
 `gain_camera.live_view` to open the camera GUI.
 """
 import os
+from pathlib import Path
 
-folder = os.path.join(*os.path.split(os.path.abspath(__file__))[:-1])
+package_root_folder = Path(__file__).parent
 
 from multiprocessing import Pipe
 from threading import Thread
@@ -37,18 +38,18 @@ class Camera:
     def __init__(self, idx):
         self.ic = IC_ImagingControl()
         self.ic.init_library()
-        filename = os.path.join(folder, "config", "camera%d" % idx)
+        config_file = package_root_folder / "config" / f"camera{idx}"
 
         try:
-            cam = self.ic.get_device_by_file(filename)
+            cam = self.ic.get_device_by_file(config_file)
             cam.exposure.value
             cam.exposure.value = -2
-            print("successfully loaded camera config from %s" % filename)
+            print(f"Successfully loaded camera config from {config_file}.")
         except:
-            print("failed to load camera config from %s" % filename)
-            print("opening camera dialog for cam %d" % idx)
+            print(f"Failed to load camera config from {config_file}.")
+            print(f"Opening camera dialog for cam {idx}.")
             cam = self.ic.get_device_by_dialog()
-            cam.save_device_state(filename)
+            cam.save_device_state(config_file)
 
         cam.stop_live()
 
