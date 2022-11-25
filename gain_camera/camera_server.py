@@ -9,33 +9,21 @@ import os
 
 folder = os.path.join(*os.path.split(os.path.abspath(__file__))[:-1])
 
-# try to import icpy3
-# os.chdir(os.path.join(folder, 'dll'))
-os.chdir(
-    "C:\\Users\\gain\\documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32"
-)
-try:
-    import icpy3
-except OSError:
-    raise Exception(
-        "unable to import icpy3. Check that TIS Grabber DLL is in the right folder"
-    )
-
-import msgpack
-import msgpack_numpy as m
-import numpy as np
-
-m.patch()
-
 from multiprocessing import Pipe
 from threading import Thread
 from time import sleep
 
+import msgpack
+import msgpack_numpy
+import numpy as np
+from pyicic.IC_ImagingControl import IC_ImagingControl
 from rpyc.utils.server import ThreadedServer
 
 from .communication.server import BaseService
 from .parameters import Parameters
 from .utils import EXPOSURES, img2count
+
+msgpack_numpy.patch()
 
 MSG_STOP = 0
 MSG_TRIGGER_ON = 1
@@ -47,7 +35,7 @@ class Camera:
     """Low-level class for accessing a camera. Should not be used directly."""
 
     def __init__(self, idx):
-        self.ic = icpy3.IC_ImagingControl()
+        self.ic = IC_ImagingControl()
         self.ic.init_library()
         filename = os.path.join(folder, "config", "camera%d" % idx)
 
@@ -64,12 +52,11 @@ class Camera:
 
         cam.stop_live()
 
-        # formats = cam.list_video_formats()
         cam.set_video_format("Y800 (744x480)")
 
-        # this is very important! If the frame rate is higher than 15,
-        # accessing 3 cameras at the same time does not work!
-        # see the comment at
+        # this is very important! If the frame rate is higher than 15, accessing 3
+        # cameras at the same time does not work!
+        # See the comment at
         # https://www.theimagingsource.com/support/documentation/ic-imaging-control-cpp/meth_descGrabber_prepareLive.htm
         cam.set_frame_rate(10)
 
