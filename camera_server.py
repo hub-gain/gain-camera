@@ -1,12 +1,9 @@
 """
-    gain_camera.camera_server
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+Starts a server that has exclusive access to the cameras. Multiple clients
+may connect to this server.
 
-    Starts a server that has exclusive access to the cameras. Multiple clients
-    may connect to this server.
-
-    Use `gain_camera.connection` to access it programmatically or call
-    `gain_camera.live_view` to open the camera GUI.
+Use `gain_camera.connection` to access it programmatically or call
+`gain_camera.live_view` to open the camera GUI.
 """
 import os
 
@@ -24,23 +21,21 @@ except OSError:
         "unable to import icpy3. Check that TIS Grabber DLL is in the right folder"
     )
 
-import rpyc
-import numpy as np
 import msgpack
 import msgpack_numpy as m
+import numpy as np
 
 m.patch()
 
-from time import time, sleep
-from threading import Thread
-from matplotlib import pyplot as plt
 from multiprocessing import Pipe
+from threading import Thread
+from time import sleep
+
 from rpyc.utils.server import ThreadedServer
 
-from gain_camera.utils import img2count, crop_imgs, EXPOSURES
-from gain_camera.parameters import Parameters
-from gain_camera.communication.server import BaseService
-
+from .communication.server import BaseService
+from .parameters import Parameters
+from .utils import EXPOSURES, img2count
 
 MSG_STOP = 0
 MSG_TRIGGER_ON = 1

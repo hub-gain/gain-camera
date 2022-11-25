@@ -1,12 +1,8 @@
 """
-    gain_camera.communication.server
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Utils for storing and managing a set of parameters on the server side.
-    `gain_camera.communication.client` contains utils for accessing it.
+Utils for storing and managing a set of parameters on the server side.
+`gain_camera.communication.client` contains utils for accessing it.
 """
 import rpyc
-from time import sleep
 
 from .utils import pack, unpack
 

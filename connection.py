@@ -4,10 +4,10 @@
 
     Contains the client that can be used to access a camera server.
 """
-import numpy as np
 from time import sleep
-from gain_camera.utils import EXPOSURES
-from gain_camera.communication.client import BaseClient
+
+from .communication.client import BaseClient
+from .utils import EXPOSURES
 
 
 class CameraConnection(BaseClient):

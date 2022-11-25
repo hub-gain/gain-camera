@@ -5,16 +5,14 @@
     A GUI for controlling the camera server.
 """
 import os
-import sys
 import signal
+import sys
 import traceback
 
 # add ui folder to path
 sys.path += [
     os.path.join(*list(os.path.split(os.path.abspath(__file__))[:-1]) + ["ui"])
 ]
-import numpy as np
-import pyqtgraph as pg
 
 import msgpack
 import msgpack_numpy as m
@@ -22,12 +20,12 @@ import msgpack_numpy as m
 m.patch()
 
 from time import sleep
-from matplotlib import pyplot as plt
-from pyqtgraph.Qt import QtCore, QtGui
-from PyQt5 import QtWidgets
 
-from gain_camera.connection import CameraConnection
-from widgets import CustomWidget
+from PyQt5 import QtWidgets
+from pyqtgraph.Qt import QtCore
+
+from .connection import CameraConnection
+from .ui.widgets import CustomWidget
 
 
 class CameraApplication:
@@ -110,7 +108,7 @@ class CameraApplication:
 
 
 if __name__ == "__main__":
-    from gain_camera.ui.main_window import Ui_MainWindow
+    from .ui.main_window import Ui_MainWindow
 
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()

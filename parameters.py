@@ -8,8 +8,8 @@
 """
 import numpy as np
 
-from gain_camera.utils import EXPOSURES
-from gain_camera.communication.server import Parameter, BaseParameters
+from .communication.server import BaseParameters, Parameter
+from .utils import EXPOSURES
 
 
 class Parameters(BaseParameters):
