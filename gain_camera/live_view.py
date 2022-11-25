@@ -103,7 +103,7 @@ class CameraApplication:
         self.app.quit()
 
 
-if __name__ == "__main__":
+def main():
     from .ui.main_window import Ui_MainWindow
 
     app = QtWidgets.QApplication(sys.argv)
@@ -130,3 +130,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()

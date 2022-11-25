@@ -43,6 +43,10 @@ dev = [
 homepage = "https://github.com/bleykauf/gain-camera/"
 repository = "https://github.com/bleykauf/gain/camera/"
 
+[project.scripts]
+gain-camera-server = "gain_camera.camera_server:main"
+gain-camera-live-view = "gain_camera.live_view:main"
+
 [tool.setuptools_scm]
 
 [tool.flake8]

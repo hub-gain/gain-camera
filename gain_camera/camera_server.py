@@ -312,6 +312,10 @@ class CameraAPIService(CameraControl):
             cam.set_exposure(self.parameters.exposure.value)
 
 
-if __name__ == "__main__":
+def main():
     server = ThreadedServer(CameraAPIService(), port=8000)
     server.start()
+
+
+if __name__ == "__main__":
+    main()
