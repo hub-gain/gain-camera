@@ -4,6 +4,7 @@ from .utils import unpack, pack
 class RemoteParameter:
     """A helper class for `RemoteParameters`, representing a single remote
     parameter."""
+
     def __init__(self, parent, remote, name, use_cache):
         self.remote = remote
         self.name = name
@@ -14,7 +15,7 @@ class RemoteParameter:
 
     @property
     def value(self):
-        if hasattr(self, '_cached_value'):
+        if hasattr(self, "_cached_value"):
             return self._cached_value
         return self.parent._get_param(self.name)
 
@@ -50,6 +51,7 @@ class RemoteParameters:
 
         r.my_param.change(on_change)
     """
+
     def __init__(self, remote, uuid, use_cache):
         self.remote = remote
         self.uuid = uuid

@@ -10,22 +10,25 @@
 """
 import os
 
-folder = os.path.join(*os.path.split(
-    os.path.abspath(__file__)
-)[:-1])
+folder = os.path.join(*os.path.split(os.path.abspath(__file__))[:-1])
 
 # try to import icpy3
-#os.chdir(os.path.join(folder, 'dll'))
-os.chdir('C:\\Users\\gain\\documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32')
+# os.chdir(os.path.join(folder, 'dll'))
+os.chdir(
+    "C:\\Users\\gain\\documents\\The Imaging Source Europe GmbH\\TIS Grabber DLL\\bin\\win32"
+)
 try:
     import icpy3
 except OSError:
-    raise Exception('unable to import icpy3. Check that TIS Grabber DLL is in the right folder')
+    raise Exception(
+        "unable to import icpy3. Check that TIS Grabber DLL is in the right folder"
+    )
 
 import rpyc
 import numpy as np
 import msgpack
 import msgpack_numpy as m
+
 m.patch()
 
 from time import time, sleep
@@ -47,26 +50,27 @@ MSG_CHANGE_EXPOSURE = 3
 
 class Camera:
     """Low-level class for accessing a camera. Should not be used directly."""
+
     def __init__(self, idx):
         self.ic = icpy3.IC_ImagingControl()
         self.ic.init_library()
-        filename = os.path.join(folder, 'config', 'camera%d' % idx)
+        filename = os.path.join(folder, "config", "camera%d" % idx)
 
         try:
             cam = self.ic.get_device_by_file(filename)
             cam.exposure.value
             cam.exposure.value = -2
-            print('successfully loaded camera config from %s' % filename)
+            print("successfully loaded camera config from %s" % filename)
         except:
-            print('failed to load camera config from %s' % filename)
-            print('opening camera dialog for cam %d' % idx)
+            print("failed to load camera config from %s" % filename)
+            print("opening camera dialog for cam %d" % idx)
             cam = self.ic.get_device_by_dialog()
             cam.save_device_state(filename)
 
         cam.stop_live()
 
-        #formats = cam.list_video_formats()
-        cam.set_video_format('Y800 (744x480)')
+        # formats = cam.list_video_formats()
+        cam.set_video_format("Y800 (744x480)")
 
         # this is very important! If the frame rate is higher than 15,
         # accessing 3 cameras at the same time does not work!
@@ -88,8 +92,10 @@ class Camera:
     def retrieve_image(self):
         [d, img_height, img_width, img_depth] = self.cam.get_image_data()
         img_depth = int(img_depth)
-        img = np.ndarray(buffer=d, dtype=np.uint8, shape=(img_width, img_height, img_depth))
-        data = img[:,:,0].astype(np.int16)
+        img = np.ndarray(
+            buffer=d, dtype=np.uint8, shape=(img_width, img_height, img_depth)
+        )
+        data = img[:, :, 0].astype(np.int16)
 
         return data
 
@@ -113,16 +119,16 @@ class CameraControl(BaseService):
 
     def _register_listeners(self):
         """Listens to parameter changes and controls the camera accordingly."""
+
         def change_exposure(exposure):
             if self.acquisition_thread is not None:
                 # acquisition thread is running --> it should handle setting the
                 # trigger (setting it directly may cause some problems).
-                self.acquisition_thread_pipe.send(
-                    MSG_CHANGE_EXPOSURE
-                )
+                self.acquisition_thread_pipe.send(MSG_CHANGE_EXPOSURE)
             else:
                 for cam in self.cams:
                     cam.set_exposure(exposure)
+
         self.parameters.exposure.change(change_exposure)
 
         def change_trigger(trigger):
@@ -134,6 +140,7 @@ class CameraControl(BaseService):
                 )
             else:
                 self.enable_trigger(trigger)
+
         self.parameters.trigger.change(change_trigger)
 
         def continuous_acquisition(enable):
@@ -141,6 +148,7 @@ class CameraControl(BaseService):
                 self.start_continuous_acquisition()
             else:
                 self.stop_continuous_acquisition()
+
         self.parameters.continuous_acquisition.change(continuous_acquisition)
 
     def start_continuous_acquisition(self):
@@ -150,10 +158,10 @@ class CameraControl(BaseService):
         transmitting data via a pipe to the main thread."""
 
         if self.acquisition_thread is not None:
-            print('continuous mode already started')
+            print("continuous mode already started")
             return
 
-        print('starting continuous mode')
+        print("starting continuous mode")
 
         def do(child_pipe):
             while True:
@@ -186,7 +194,7 @@ class CameraControl(BaseService):
                             break
 
                     if not all_were_triggered:
-                        print('no trigger')
+                        print("no trigger")
                         continue
 
                 imgs = []
@@ -195,16 +203,16 @@ class CameraControl(BaseService):
                     # numpy array
                     imgs.append(np.array(self._retrieve_image(idx)).tolist())
 
-                self.parameters.live_imgs.value  = msgpack.packb(imgs)
+                self.parameters.live_imgs.value = msgpack.packb(imgs)
 
                 # if recording is enabled, calculate the atom number
-                if self.parameters.recording.value \
-                    and self.parameters.exposure.value is not None \
-                    and self.parameters.recording_length.value is not None:
+                if (
+                    self.parameters.recording.value
+                    and self.parameters.exposure.value is not None
+                    and self.parameters.recording_length.value is not None
+                ):
                     exposure = self.parameters.exposure.value
-                    atoms = [
-                        img2count(data, exposure) for data in imgs
-                    ]
+                    atoms = [img2count(data, exposure) for data in imgs]
                     self.parameters.live_atom_number.value = np.sum(atoms)
                 elif self.parameters.live_atom_number.value is not None:
                     self.parameters.live_atom_number.value = None
@@ -212,11 +220,11 @@ class CameraControl(BaseService):
                 if trigger:
                     reset = [cam.cam.reset_frame_ready() for cam in self.cams]
                 else:
-                    sleep(.05)
+                    sleep(0.05)
 
         pipe, child_pipe = Pipe()
 
-        self.acquisition_thread = Thread(target = do, args = (child_pipe,))
+        self.acquisition_thread = Thread(target=do, args=(child_pipe,))
         self.acquisition_thread.start()
         self.acquisition_thread_pipe = pipe
 
@@ -290,11 +298,9 @@ class CameraAPIService(CameraControl):
             for cam in self.cams:
                 cam.set_exposure(int(exposure))
 
-            sleep(.5)
+            sleep(0.5)
 
-            backgrounds.append(
-                [cam.retrieve_image() for cam in self.cams]
-            )
+            backgrounds.append([cam.retrieve_image() for cam in self.cams])
 
         self.parameters.background.value = backgrounds
 
@@ -305,6 +311,6 @@ class CameraAPIService(CameraControl):
             cam.set_exposure(self.parameters.exposure.value)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     server = ThreadedServer(CameraAPIService(), port=8000)
     server.start()

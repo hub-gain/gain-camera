@@ -29,6 +29,7 @@ class CameraConnection(BaseClient):
         plt.pcolormesh(c.parameters.live_imgs.value[0])
         plt.show()
     """
+
     def __init__(self, server, port, keep_in_sync=False):
         super().__init__(server, port, keep_in_sync)
 
@@ -47,8 +48,9 @@ class CameraConnection(BaseClient):
         self.parameters.trigger.value = enable
 
     def set_exposure_time(self, exposure):
-        assert exposure in EXPOSURES, \
-            ('invalid exposure times. Valid values are %s' % str(EXPOSURES))
+        assert (
+            exposure in EXPOSURES
+        ), "invalid exposure times. Valid values are %s" % str(EXPOSURES)
         self.parameters.exposure.value = exposure
 
     def snap_image(self, cam_idx, subtract=False):
@@ -78,7 +80,7 @@ class CameraConnection(BaseClient):
         self.parameters.continuous_acquisition.value = False
         # wait some time to be sure that acquisition is really stopped
         # we have to do this because it may be waiting for a trigger
-        sleep(.75)
+        sleep(0.75)
         self.connection.root.record_background()
         # start continuous acquisition again
         self.parameters.continuous_acquisition.value = True

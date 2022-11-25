@@ -8,6 +8,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -250,7 +251,9 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addWidget(self.label_3)
         self.verticalLayout_6.addLayout(self.horizontalLayout_2)
         self.verticalLayout_2.addWidget(self.groupBox_4)
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        spacerItem = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+        )
         self.verticalLayout_2.addItem(spacerItem)
         self.horizontalLayout.addLayout(self.verticalLayout_2)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -276,6 +279,7 @@ class Ui_MainWindow(object):
         self.label_4.setText(_translate("MainWindow", "up to"))
         self.label_3.setText(_translate("MainWindow", "data points"))
 
+
 from atom_number_widget import AtomNumberWidget
 from camera_widget import CameraWidget
 from configure_recording_box import ConfigureRecordingBox
@@ -285,10 +289,10 @@ from select_exposure_time import SelectExposureTimeWidget
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
-

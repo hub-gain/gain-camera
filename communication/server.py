@@ -13,8 +13,16 @@ from .utils import pack, unpack
 
 class Parameter:
     """Represents a single parameter and is used by `Parameters`."""
-    def __init__(self, min_=None, max_=None, start=None, wrap=False, sync=True,
-                 collapsed_sync=False):
+
+    def __init__(
+        self,
+        min_=None,
+        max_=None,
+        start=None,
+        wrap=False,
+        sync=True,
+        collapsed_sync=False,
+    ):
         self.min = min_
         self.max = max_
         self.wrap = wrap
@@ -79,6 +87,7 @@ class BaseParameters:
 
         p.param1.change(on_change)
     """
+
     def __init__(self):
         self._remote_listener_queue = {}
         self._remote_listener_callbacks = {}
@@ -137,6 +146,7 @@ class BaseParameters:
 class BaseService(rpyc.Service):
     """A service that provides functionality for seamless integration of
     parameter access on the client."""
+
     def __init__(self, parameter_cls):
         self.parameters = parameter_cls()
         self._uuid_mapping = {}

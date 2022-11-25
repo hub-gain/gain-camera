@@ -4,7 +4,7 @@ from widgets import CustomWidget
 from pyqtgraph.Qt import QtCore
 
 
-INPUT_NAMES = ('cropX0', 'cropX1', 'cropY0', 'cropY1')
+INPUT_NAMES = ("cropX0", "cropX1", "cropY0", "cropY1")
 
 
 class CropBoxWidget(QtWidgets.QGroupBox, CustomWidget):
@@ -22,13 +22,10 @@ class CropBoxWidget(QtWidgets.QGroupBox, CustomWidget):
 
     @property
     def checkbox_enable(self):
-        return self.get_widget('enableCrop')
+        return self.get_widget("enableCrop")
 
     def get_crop_bounds(self):
-        values = [
-            self.get_widget(key).value() for key in
-            INPUT_NAMES
-        ]
+        values = [self.get_widget(key).value() for key in INPUT_NAMES]
         if values[1] <= values[0]:
             values[1] = values[0] + 5
         if values[3] <= values[2]:
@@ -49,7 +46,9 @@ class CropBoxWidget(QtWidgets.QGroupBox, CustomWidget):
         def delayed_change():
             """Delayed change is required in order to be able to initially set
             both `crop_enabled` and `crop` without firing a change in between."""
-            self.connection.parameters.crop_enabled.value = self.checkbox_enable.isChecked()
+            self.connection.parameters.crop_enabled.value = (
+                self.checkbox_enable.isChecked()
+            )
             self.connection.parameters.crop.value = tuple(self.get_crop_bounds())
 
         QtCore.QTimer.singleShot(100, delayed_change)

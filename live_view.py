@@ -8,17 +8,17 @@ import os
 import sys
 import signal
 import traceback
+
 # add ui folder to path
 sys.path += [
-    os.path.join(*list(
-        os.path.split(os.path.abspath(__file__))[:-1]) + ['ui']
-    )
+    os.path.join(*list(os.path.split(os.path.abspath(__file__))[:-1]) + ["ui"])
 ]
 import numpy as np
 import pyqtgraph as pg
 
 import msgpack
 import msgpack_numpy as m
+
 m.patch()
 
 from time import sleep
@@ -40,7 +40,7 @@ class CameraApplication:
 
     def init(self):
         self.connection = CameraConnection(
-            'gain.physik.hu-berlin.de', 8000, keep_in_sync=True
+            "gain.physik.hu-berlin.de", 8000, keep_in_sync=True
         )
         self.connection.run_continuous_acquisition()
 
@@ -62,11 +62,13 @@ class CameraApplication:
         def live_imgs_changed(data):
             if data is not None:
                 self.image_data = msgpack.unpackb(data)
+
         self.connection.parameters.live_imgs.change(live_imgs_changed)
 
         def atom_number_changed(atom_number):
             if atom_number is not None:
                 self.atom_number_data.append(atom_number)
+
         self.connection.parameters.live_atom_number.change(atom_number_changed)
 
     def draw_images(self):
@@ -86,14 +88,14 @@ class CameraApplication:
 
             if not data_not_good:
                 # plot 2D images
-                camera_widget = self.get_widget('cameras')
+                camera_widget = self.get_widget("cameras")
                 camera_widget.draw_images(image_data)
 
         atom_number_data = self.atom_number_data
         if atom_number_data:
             self.atom_number_data = []
             # add data point to atom number plot
-            atom_number_widget = self.get_widget('atom_numbers')
+            atom_number_widget = self.get_widget("atom_numbers")
             atom_number_widget.update(atom_number_data)
 
         # queue this function again
@@ -107,8 +109,9 @@ class CameraApplication:
         self.app.quit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from gain_camera.ui.main_window import Ui_MainWindow
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
@@ -116,13 +119,14 @@ if __name__ == '__main__':
     MainWindow.show()
 
     persistent = {}
+
     def _run():
         while True:
             try:
-                persistent['application'] = CameraApplication(app, MainWindow)
+                persistent["application"] = CameraApplication(app, MainWindow)
                 break
             except:
-                print('connection error')
+                print("connection error")
                 traceback.print_exc()
                 sleep(1)
 

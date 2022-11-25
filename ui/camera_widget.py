@@ -18,7 +18,7 @@ class CameraWidget(GraphicsLayoutWidget, CustomWidget):
             view.setAspectLocked(True)
 
             #  image plot
-            img = pg.ImageItem(border='w')
+            img = pg.ImageItem(border="w")
             view.addItem(img)
 
             self.views.append(view)

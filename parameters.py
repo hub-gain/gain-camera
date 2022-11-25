@@ -18,7 +18,9 @@ class Parameters(BaseParameters):
 
         # the exposure time of the cameras (-2 to -13)
         # exposure time in ms: 250 / (2**exposure)
-        self.exposure = Parameter(start=-2, min_=np.min(EXPOSURES), max_=np.max(EXPOSURES))
+        self.exposure = Parameter(
+            start=-2, min_=np.min(EXPOSURES), max_=np.max(EXPOSURES)
+        )
         self.background = Parameter()
         self.crop_enabled = Parameter(start=True)
         self.crop = Parameter(start=(0, 744, 0, 480))

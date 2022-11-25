@@ -26,27 +26,33 @@ class AtomNumberWidget(pg.PlotWidget, CustomWidget):
 
         def exposure_changed(exposure):
             self.exposure = exposure
+
         params.exposure.change(exposure_changed)
 
         def recording_length_changed(recording_length):
             self.recording_length = recording_length
             self.clip_atom_number_recording()
+
         params.recording_length.change(recording_length_changed)
 
         def clear_recording_changed(clear):
             if clear:
                 self.atom_numbers = []
+
         params.clear_recording.change(clear_recording_changed)
 
         def recording_changed(recording):
             self.recording = recording
+
         params.recording.change(recording_changed)
 
     @property
     def ready(self):
-        return self.connection is not None \
-             and self.exposure is not None \
-             and self.recording_length is not None
+        return (
+            self.connection is not None
+            and self.exposure is not None
+            and self.recording_length is not None
+        )
 
     def update(self, data):
         if not self.recording or not self.ready:
@@ -58,4 +64,4 @@ class AtomNumberWidget(pg.PlotWidget, CustomWidget):
 
     def clip_atom_number_recording(self):
         """Clip the recording of atom numbers such that `recording_length` is respected."""
-        self.atom_numbers = self.atom_numbers[-self.recording_length:]
+        self.atom_numbers = self.atom_numbers[-self.recording_length :]

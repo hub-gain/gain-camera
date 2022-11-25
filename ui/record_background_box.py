@@ -10,7 +10,7 @@ class RecordBackgroundBox(QtWidgets.QGroupBox, CustomWidget):
     def connection_established(self, connection):
         self.connection = connection
         self.connection.parameters.background.change(self.react_to_change)
-        #self.activated.connect(self.selected_exposure)
+        # self.activated.connect(self.selected_exposure)
         self.react_to_change(self.connection.parameters.background.value)
 
         self.record_button.clicked.connect(self.record_background)
@@ -18,11 +18,11 @@ class RecordBackgroundBox(QtWidgets.QGroupBox, CustomWidget):
 
     @property
     def record_button(self):
-        return self.get_widget('recordBackground')
+        return self.get_widget("recordBackground")
 
     @property
     def clear_button(self):
-        return self.get_widget('clearBackground')
+        return self.get_widget("clearBackground")
 
     def react_to_change(self, background):
         if background is not None:
