@@ -1,9 +1,5 @@
-"""
-    gain_camera.camera_live_view
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"""A GUI for controlling the camera server."""
 
-    A GUI for controlling the camera server.
-"""
 import os
 import signal
 import sys

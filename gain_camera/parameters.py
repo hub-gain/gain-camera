@@ -1,10 +1,7 @@
 """
-    gain_camera.parameters
-    ~~~~~~~~~~~~~~~~~~~~~~
-
-    Contains a definition of the parameters that are used. The parameters' values
-    are accessible by client and server, and both parties can register listeners
-    that are called when a value changes.
+Contains a definition of the parameters that are used. The parameters' valuee are
+accessible by client and server, and both parties can register listeners that are called
+when a value changes.
 """
 import numpy as np
 
@@ -28,8 +25,8 @@ class Parameters(BaseParameters):
         # are the cameras in continuous acquisition mode?
         self.continuous_acquisition = Parameter(start=False)
 
-        # if the server is in "continuous acquisition" mode, the recorded images
-        # will be stored here
+        # if the server is in "continuous acquisition" mode, the recorded images will be
+        # stored here
         self.live_imgs = Parameter(collapsed_sync=True)
         self.live_atom_number = Parameter()
 

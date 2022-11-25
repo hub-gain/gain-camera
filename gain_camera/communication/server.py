@@ -64,8 +64,9 @@ class Parameter:
 
 
 class BaseParameters:
-    """Represents a set of parameters. In an actual program, it should be
-    sub-classed like this:
+    """
+    Represents a set of parameters. In an actual program, it should be sub-classed like
+    this:
 
         class MyParameters(BaseParameters):
             def __init__(self):
@@ -140,8 +141,10 @@ class BaseParameters:
 
 
 class BaseService(rpyc.Service):
-    """A service that provides functionality for seamless integration of
-    parameter access on the client."""
+    """
+    A service that provides functionality for seamless integration of parameter access
+    on the client.
+    """
 
     def __init__(self, parameter_cls):
         self.parameters = parameter_cls()

@@ -1,13 +1,13 @@
 """
-    communication.client
-    ~~~~~~~~~~~~~~~~~~~~
-
-    Contains the client that can be used to access a service with easy access
-    to the server's parameters.
+Contains the client that can be used to access a service with easy access to the
+server's parameters.
 """
-import rpyc
+
 import uuid
+
+import rpyc
 from plumbum import colors
+
 from .remote_parameters import RemoteParameters
 
 

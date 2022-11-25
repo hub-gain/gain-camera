@@ -1,9 +1,10 @@
-from .utils import unpack, pack
+from .utils import pack, unpack
 
 
 class RemoteParameter:
-    """A helper class for `RemoteParameters`, representing a single remote
-    parameter."""
+    """
+    A helper class for `RemoteParameters`, representing a single remote parameter.
+    """
 
     def __init__(self, parent, remote, name, use_cache):
         self.remote = remote
@@ -39,7 +40,8 @@ class RemoteParameter:
 
 
 class RemoteParameters:
-    """A class that provides remote access to a `parameters.Parameters` instance.
+    """
+    A class that provides remote access to a `parameters.Parameters` instance.
 
     It clones the functionality of the remote `Parameters` instance. E.g.:
 

@@ -1,6 +1,6 @@
 """
-Starts a server that has exclusive access to the cameras. Multiple clients
-may connect to this server.
+Starts a server that has exclusive access to the cameras. Multiple clients may connect
+to this server.
 
 Use `gain_camera.connection` to access it programmatically or call
 `gain_camera.live_view` to open the camera GUI.
@@ -147,10 +147,12 @@ class CameraControl(BaseService):
         self.parameters.continuous_acquisition.change(continuous_acquisition)
 
     def start_continuous_acquisition(self):
-        """Starts continuous acquisition mode.
+        """
+        Starts continuous acquisition mode.
 
-        For this, a thread is started that continuously takes images,
-        transmitting data via a pipe to the main thread."""
+        For this, a thread is started that continuously takes images, transmitting data
+        via a pipe to the main thread.
+        """
 
         if self.acquisition_thread is not None:
             print("continuous mode already started")
@@ -262,8 +264,10 @@ class CameraControl(BaseService):
 
 
 class CameraAPIService(CameraControl):
-    """Contains the public API of the camera server. Notice that you also
-    may control some functionality by setting parameters."""
+    """
+    Contains the public API of the camera server. Notice that you also may control some
+    functionality by setting parameters.
+    """
 
     def exposed_snap_image(self, idx, subtract=False):
         img = self.cams[idx].snap_image()
@@ -281,8 +285,10 @@ class CameraAPIService(CameraControl):
         return self.cams[cam_idx].cam.wait_til_frame_ready()
 
     def exposed_record_background(self):
-        """Records a background image for all exposures that will be subtracted
-        automatically for future images."""
+        """
+        Records a background image for all exposures that will be subtracted
+        automatically for future images.
+        """
         exposures = EXPOSURES
         backgrounds = []
 
