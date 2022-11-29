@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gain-camera"
+name = "mot-viewer"
 description = "Camera viewer for viewing MOT"
 authors = [
     { name = "Bastian Leykauf" },
@@ -44,8 +44,8 @@ homepage = "https://github.com/bleykauf/gain-camera/"
 repository = "https://github.com/bleykauf/gain/camera/"
 
 [project.scripts]
-gain-camera-server = "gain_camera.camera_server:main"
-gain-camera-live-view = "gain_camera.live_view:main"
+# gain-camera-server = "gain_camera.camera_server:main"
+# gain-camera-live-view = "gain_camera.live_view:main"
 
 [tool.setuptools_scm]
 
