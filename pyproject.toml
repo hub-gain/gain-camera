@@ -25,7 +25,6 @@ dependencies = [
     "PyQt5",
     "rpyc",
     "plumbum",
-    "py-ic-imaging-control @ git+https://github.com/bleykauf/py-ic-imaging-control.git@develop",
 ]
 dynamic = ["version"]
 [project.optional-dependencies]
